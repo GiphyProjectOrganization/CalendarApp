@@ -13,7 +13,8 @@ export function Register() {
         phoneNumber: ''
     })
 
-    const register = async () => {
+    const register = async (e) => {
+        e.preventDefault();
 
         if (
             !user.email.trim() ||
@@ -32,22 +33,40 @@ export function Register() {
         if (!/\d/.test(user.password) || !/[!@#$%^&*(),.?":{}|<>]/.test(user.password)) {
             return alert("Password must have one number and one symbol!")
         }
-        if (user.firstName.length < 1 || user.firstName.length >= 30 || /^[A-Za-z]+$/.test(user.firstName)) {
-            return alert("First name must be between 1 and 30 character and include only uppercase and lowercase letters!")
-        }
-        if (user.phoneNumber.length === 10 || !/^\d+$/.test(user.phoneNumber)) {
-            return alert("Phone Number must be 10 digits and include only numbers!")
-        }
+        // if (user.firstName.length < 1 || user.firstName.length >= 30 || /^[A-Za-z]+$/.test(user.firstName)) {
+        //     return alert("First name must be between 1 and 30 character and include only uppercase and lowercase letters!")
+        // }
+        // if (user.phoneNumber.length === 10 || !/^\d+$/.test(user.phoneNumber)) {
+        //     return alert("Phone Number must be 10 digits and include only numbers!")
+        // }
 
         try {
+            const res = await fetch("http://localhost:5000/api/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(user), //object
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert("Registration successful!");
+            } else {
+                alert(`Error: ${data.message}`);
+            }
 
-        } catch {
-
+        } catch (err) {
+            console.error("Register failed:", err);
+            alert("Something went wrong.");
         }
-
-
-
     }
+
+    const updateUser = (prop) => (e) => {
+        setUser((prev) => ({
+            ...prev,
+            [prop]: e.target.value,
+        }));
+    };
+
+
     return (
         <>
             <section className="min-h-screen bg-gradient-to-br from-emerald-100 via-lime-100 to-white flex items-center justify-center">
@@ -67,8 +86,8 @@ export function Register() {
                                     </label>
                                     <input
                                         type="email"
-                                        // value={user.email}
-                                        // onChange={updateUser('email')}
+                                        value={user.email}
+                                        onChange={updateUser('email')}
                                         name="email"
                                         id="email"
                                         placeholder="name@yahoo.com"
@@ -85,8 +104,8 @@ export function Register() {
                                         <div className="mt-2">
                                             <input
                                                 id="first-name"
-                                                // value={user.firstName}
-                                                // onChange={updateUser('firstName')}
+                                                value={user.firstName}
+                                                onChange={updateUser('firstName')}
                                                 name="first-name"
                                                 placeholder="Milko"
                                                 type="text"
@@ -103,8 +122,8 @@ export function Register() {
                                         <div className="mt-2">
                                             <input
                                                 id="last-name"
-                                                // value={user.lastName}
-                                                // onChange={updateUser('lastName')}
+                                                value={user.lastName}
+                                                onChange={updateUser('lastName')}
                                                 name="last-name"
                                                 placeholder="Kalaidjiev"
                                                 type="text"
@@ -124,8 +143,8 @@ export function Register() {
                                     </label>
                                     <input
                                         type="tel"
-                                        // value={user.email}
-                                        // onChange={updateUser('email')}
+                                        value={user.phoneNumber}
+                                        onChange={updateUser('phoneNumber')}
                                         name="phone"
                                         id=""
                                         placeholder="+3598238605432"
@@ -143,8 +162,8 @@ export function Register() {
                                     </label>
                                     <input
                                         type="text"
-                                        // value={user.username}
-                                        // onChange={updateUser('username')}
+                                        value={user.username}
+                                        onChange={updateUser('username')}
                                         name="handle"
                                         id="handle"
                                         placeholder="Example: mitkoPaynera"
@@ -160,8 +179,8 @@ export function Register() {
                                         Password
                                     </label>
                                     <input
-                                        // value={user.password}
-                                        // onChange={updateUser('password')}
+                                        value={user.password}
+                                        onChange={updateUser('password')}
                                         type="password"
                                         name="password"
                                         id="password"
@@ -212,6 +231,7 @@ export function Register() {
                                 <button
                                     type="submit"
                                     // disabled={loading}
+                                    onClick={register}
                                     className="w-full bg-gradient-to-r from-emerald-500 to-lime-500 text-white py-3 px-4 rounded-xl font-bold text-lg shadow-lg transition-opacity "
                                 >
                                     Create an account
