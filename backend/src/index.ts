@@ -30,7 +30,8 @@ app.post("/api/register", async (req, res) => {
     !firstName?.trim() ||
     !phoneNumber?.trim()
   ) {
-    return alert("Please enter valid credentials.");
+    res.status(500).json({ message: "Please enter valid credentials." });
+    return
   }
 
   try {
