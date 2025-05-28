@@ -3,6 +3,7 @@ import './App.css'
 import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import { Register } from './pages/Auth/Register';
 import { Link } from 'react-router-dom';
+import { MonthView } from './components/views/MonthView';
 
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
 
         <Routes>
           <Route path='/register' element={<Register />} />
+          <Route path='/' element={<MonthView />} />
 
         </Routes>
       </BrowserRouter>
