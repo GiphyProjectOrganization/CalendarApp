@@ -1,19 +1,27 @@
-import { useState } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import { NavLink } from "react-router-dom";
 
+interface UserRegister {
+    username: string;
+    firstName: string;
+    lastName: string;
+    password: string;
+    email: string;
+    phoneNumber: string;
+}
 
 export function Register() {
 
-    const [user, setUser] = useState({
+    const [user, setUser] = useState<UserRegister>({
         username: '',
         firstName: '',
         lastName: '',
         password: '',
         email: '',
         phoneNumber: ''
-    })
+    });
 
-    const register = async (e) => {
+    const register = async (e: FormEvent<HTMLButtonElement>) => {
         e.preventDefault();
 
         if (
@@ -33,18 +41,18 @@ export function Register() {
         if (!/\d/.test(user.password) || !/[!@#$%^&*(),.?":{}|<>]/.test(user.password)) {
             return alert("Password must have one number and one symbol!")
         }
-        // if (user.firstName.length < 1 || user.firstName.length >= 30 || /^[A-Za-z]+$/.test(user.firstName)) {
-        //     return alert("First name must be between 1 and 30 character and include only uppercase and lowercase letters!")
-        // }
-        // if (user.phoneNumber.length === 10 || !/^\d+$/.test(user.phoneNumber)) {
-        //     return alert("Phone Number must be 10 digits and include only numbers!")
-        // }
+        if (user.firstName.length < 1 || user.firstName.length >= 30 || !/^[A-Za-z]+$/.test(user.firstName)) {
+            return alert("First name must be between 1 and 30 character and include only uppercase and lowercase letters!")
+        }
+        if (user.phoneNumber.length === 10 || !/^\d+$/.test(user.phoneNumber)) {
+            return alert("Phone Number must be 10 digits and include only numbers!")
+        }
 
         try {
             const res = await fetch("http://localhost:5000/api/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(user), //object
+                body: JSON.stringify(user),
             });
             const data = await res.json();
             if (res.ok) {
@@ -59,10 +67,10 @@ export function Register() {
         }
     }
 
-    const updateUser = (prop) => (e) => {
+    const updateUser = (prop: keyof UserRegister) => (e: ChangeEvent<HTMLInputElement>) => {
         setUser((prev) => ({
             ...prev,
-            [prop]: e.target.value,
+            [prop]: e.target.value
         }));
     };
 
