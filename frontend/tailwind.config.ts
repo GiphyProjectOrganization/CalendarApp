@@ -1,22 +1,21 @@
 import type { Config } from 'tailwindcss';
 
-const config: Config = {
+interface ExtendedConfig extends Config {
+  daisyui?: {
+    themes?: any;
+  };
+}
+
+const config: ExtendedConfig = {
   content: [
     './index.html',
-    './src/**/*.{js,ts,jsx,tsx}', 
+    './src/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
-    extend: {
-      colors: {
-        straw: "#D9D98F",
-        citron: "#C2C658",
-        olivine: "#9AB659",
-        mossGreen: "#768E3E",
-        field: "#78662B",
-        darkBrown: "#47401F",
-        darkPurple: "#2B121E"
-      }
-    },
+    extend: {},
+  },
+  daisyui: {
+    themes: ["honey", "forest", "ocean"],
   },
   plugins: [require('daisyui')],
 };

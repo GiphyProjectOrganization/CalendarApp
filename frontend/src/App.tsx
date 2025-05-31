@@ -2,22 +2,28 @@ import { useState } from 'react'
 import './App.css'
 import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import { Register } from './pages/Auth/Register';
-import { Link } from 'react-router-dom';
-import { MonthView } from './components/views/MonthView';
-
+import { MonthView } from './components/views/monthView/MonthView';
+import { WeekView } from './components/views/WeekView';
+import { Header } from './components/layout/Header';
+import { Outlet } from 'react-router-dom';
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
     <>
       <BrowserRouter>
-        <Link className='text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium ' to='/register'>Register</Link>
+
+        <Header />
 
         <Routes>
           <Route path='/register' element={<Register />} />
           <Route path='/' element={<MonthView />} />
-
+          
+          <Route path="/calendar" element={<MonthView />}>
+            {/* <Route path="day" element={<DayView />} /> */}
+            <Route path="week" element={<WeekView />} />
+            <Route path="month" element={<MonthView />} />
+            <Route index element={<MonthView />} /> {/* default */}
+          </Route>
         </Routes>
       </BrowserRouter>
 

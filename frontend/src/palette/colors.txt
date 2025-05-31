@@ -1,0 +1,48 @@
+@theme {
+    --color-straw: #D9D98F;
+    --color-citron: #C2C658;
+    --color-olivine: #9ab659;
+    --color-mossGreen: #768E3E;
+    --color-field: #78662B;
+    --color-darkBrown: #47401F;
+    --color-darkPurple: #2B121E;
+}
+
+/* Light Blue Theme
+068D9D
+53599A
+6D9DC5
+80DED9
+AEECEF
+ */
+
+/* Dark Blue Theme
+045962
+393D6A
+4680AF
+4DD1CA
+88E3E7 
+ */
+
+/*Light Green Theme
+D6D98F - straw
+9AB659 - olivine
+AB923E - satinGold
+B85F17 - field
+7B1508 - tyrianPurple
+*/
+
+/* CSS HEX */
+--straw: #D6D98Fff;
+--olivine: #9AB659ff;
+--satin-sheen-gold: #AB923Eff;
+--burnt-orange: #B85F17ff;
+--barn-red: #7B1508ff;
+
+/*Dark Green Theme
+C2C658 - citron
+768E3E - mossGreen
+78662B - darkField
+47401F - darkBrown
+2B121E - darkPurple
+*/
