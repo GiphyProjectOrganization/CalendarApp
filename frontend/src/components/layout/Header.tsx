@@ -1,13 +1,10 @@
 import React from "react";
 import ThemeSwap from "../contexts/theme/ThemeSwap";
-import { Link, Outlet} from "react-router-dom";
+import { Link} from "react-router-dom";
 import { ViewSwitcher } from "../views/ViewSwitcher";
-import { useState } from "react";
-import { WeekView } from "../views/WeekView";
-import { MonthView } from "../views/monthView/MonthView";
+import { WeatherForecast } from "../weather/WeatherForecast";
 
 export const Header: React.FC = () => {
-  const [view, setView] = useState<'day' | 'week' | 'month'>('month');
 
   return (
     <div className="navbar bg-base-100 shadow-md">
@@ -15,11 +12,7 @@ export const Header: React.FC = () => {
         <ThemeSwap />
       </div>
       <div className="navbar-center hidden lg:flex">
-        <ul className="menu menu-horizontal px-1">
-          <li><a>Home</a></li>
-          <li><a>About</a></li>
-          <li><a>Contact</a></li>
-        </ul>
+        <WeatherForecast />
       </div>
       <div className="navbar-end">
         <ViewSwitcher />
