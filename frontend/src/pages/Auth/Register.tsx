@@ -115,7 +115,7 @@ export function Register() {
                                                 value={user.firstName}
                                                 onChange={updateUser('firstName')}
                                                 name="first-name"
-                                                placeholder="Milko"
+                                                placeholder="John"
                                                 type="text"
                                                 autoComplete="given-name"
                                                 className="block w-full rounded-md bg-gray-50 px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
@@ -133,7 +133,7 @@ export function Register() {
                                                 value={user.lastName}
                                                 onChange={updateUser('lastName')}
                                                 name="last-name"
-                                                placeholder="Kalaidjiev"
+                                                placeholder="Doe"
                                                 type="text"
                                                 autoComplete="family-name"
                                                 className="block w-full rounded-md bg-gray-50 px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
@@ -174,7 +174,7 @@ export function Register() {
                                         onChange={updateUser('username')}
                                         name="handle"
                                         id="handle"
-                                        placeholder="Example: mitkoPaynera"
+                                        placeholder="Example: jdoe"
                                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
                                         required
                                     />
