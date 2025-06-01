@@ -1,28 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-interface Event {
-  title: string;
-  description: string;
-  startDate: string;
-  startTime: string;
-  endDate: string;
-  endTime: string;
-  location: string;
-  isPublic: boolean;
-  isDraft: boolean;
-  tags: string[];
-  participants: string[];
-  reminders: number[];
-  isRecurring: boolean;
-  recurrencePattern?: {
-    type: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    interval: number;
-    endDate?: string;
-    daysOfWeek?: number[];
-    dayOfMonth?: number;
-  };
-}
+import { eventService, Event } from "../../services/eventService";
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -46,6 +24,7 @@ const CreateEvent = () => {
   const [newParticipant, setNewParticipant] = useState('');
   const [newReminder, setNewReminder] = useState('');
   const [showRecurrenceOptions, setShowRecurrenceOptions] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateEvent = (field: keyof Event) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
@@ -146,6 +125,8 @@ const CreateEvent = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
     const eventData = {
       ...event,
       isDraft,
@@ -154,26 +135,14 @@ const CreateEvent = () => {
     };
 
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('http://localhost:5000/api/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add authorization header when auth is implemented
-        },
-        body: JSON.stringify(eventData)
-      });
-
-      if (response.ok) {
-        alert(isDraft ? 'Event saved as draft!' : 'Event created successfully!');
-        navigate('/calendar');
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.message}`);
-      }
+      const result = await eventService.createEvent(eventData);
+      alert(result.message);
+      navigate('/calendar');
     } catch (err) {
       console.error('Failed to create event:', err);
-      alert('Failed to create event. Please try again.');
+      alert(err instanceof Error ? err.message : 'Failed to create event. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -465,20 +434,23 @@ const CreateEvent = () => {
               <button
                 type="button"
                 onClick={() => handleSubmit(true)}
-                className="btn btn-outline btn-secondary flex-1"
+                disabled={isSubmitting}
+                className={`btn btn-outline btn-secondary flex-1 ${isSubmitting ? 'loading' : ''}`}
               >
-                Save as Draft
+                {isSubmitting ? 'Saving...' : 'Save as Draft'}
               </button>
               <button
                 type="button"
                 onClick={() => handleSubmit(false)}
-                className="btn btn-primary flex-1"
+                disabled={isSubmitting}
+                className={`btn btn-primary flex-1 ${isSubmitting ? 'loading' : ''}`}
               >
-                Create Event
+                {isSubmitting ? 'Creating...' : 'Create Event'}
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/calendar')}
+                disabled={isSubmitting}
                 className="btn btn-ghost flex-1"
               >
                 Cancel
@@ -489,6 +461,6 @@ const CreateEvent = () => {
       </div>
     </div>
   );
-}
+};
 
 export default CreateEvent;
