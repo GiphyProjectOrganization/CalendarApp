@@ -1,28 +1,6 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-interface Event {
-  title: string;
-  description: string;
-  startDate: string;
-  startTime: string;
-  endDate: string;
-  endTime: string;
-  location: string;
-  isPublic: boolean;
-  isDraft: boolean;
-  tags: string[];
-  participants: string[];
-  reminders: number[];
-  isRecurring: boolean;
-  recurrencePattern?: {
-    type: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    interval: number;
-    endDate?: string;
-    daysOfWeek?: number[];
-    dayOfMonth?: number;
-  };
-}
+import { useState, ChangeEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { eventService, Event } from '../../services/eventService';
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -46,75 +24,91 @@ const CreateEvent = () => {
   const [newParticipant, setNewParticipant] = useState('');
   const [newReminder, setNewReminder] = useState('');
   const [showRecurrenceOptions, setShowRecurrenceOptions] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const updateEvent = (field: keyof Event) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
-    setEvent(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
+  const updateEvent =
+    (field: keyof Event) =>
+    (
+      e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
+      const value =
+        e.target.type === 'checkbox'
+          ? (e.target as HTMLInputElement).checked
+          : e.target.value;
+      setEvent((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    };
 
-  const updateRecurrence = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const value = e.target.type === 'number' ? parseInt(e.target.value) : e.target.value;
-    setEvent(prev => ({
-      ...prev,
-      recurrencePattern: {
-        ...prev.recurrencePattern,
-        [field]: value
-      } as Event['recurrencePattern']
-    }));
-  };
+  const updateRecurrence =
+    (field: string) =>
+    (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const value =
+        e.target.type === 'number' ? parseInt(e.target.value) : e.target.value;
+      setEvent((prev) => ({
+        ...prev,
+        recurrencePattern: {
+          ...prev.recurrencePattern,
+          [field]: value,
+        } as Event['recurrencePattern'],
+      }));
+    };
 
   const addTag = () => {
     if (newTag.trim() && !event.tags.includes(newTag.trim())) {
-      setEvent(prev => ({
+      setEvent((prev) => ({
         ...prev,
-        tags: [...prev.tags, newTag.trim()]
+        tags: [...prev.tags, newTag.trim()],
       }));
       setNewTag('');
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    setEvent(prev => ({
+    setEvent((prev) => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: prev.tags.filter((tag) => tag !== tagToRemove),
     }));
   };
 
   const addParticipant = () => {
-    if (newParticipant.trim() && !event.participants.includes(newParticipant.trim())) {
-      setEvent(prev => ({
+    if (
+      newParticipant.trim() &&
+      !event.participants.includes(newParticipant.trim())
+    ) {
+      setEvent((prev) => ({
         ...prev,
-        participants: [...prev.participants, newParticipant.trim()]
+        participants: [...prev.participants, newParticipant.trim()],
       }));
       setNewParticipant('');
     }
   };
 
   const removeParticipant = (participantToRemove: string) => {
-    setEvent(prev => ({
+    setEvent((prev) => ({
       ...prev,
-      participants: prev.participants.filter(p => p !== participantToRemove)
+      participants: prev.participants.filter((p) => p !== participantToRemove),
     }));
   };
 
   const addReminder = () => {
     const minutes = parseInt(newReminder);
+
     if (minutes > 0 && !event.reminders.includes(minutes)) {
-      setEvent(prev => ({
+      setEvent((prev) => ({
         ...prev,
-        reminders: [...prev.reminders, minutes].sort((a, b) => a - b)
+        reminders: [...prev.reminders, minutes].sort((a, b) => a - b),
       }));
+
       setNewReminder('');
     }
   };
 
   const removeReminder = (reminderToRemove: number) => {
-    setEvent(prev => ({
+    setEvent((prev) => ({
       ...prev,
-      reminders: prev.reminders.filter(r => r !== reminderToRemove)
+      reminders: prev.reminders.filter((r) => r !== reminderToRemove),
     }));
   };
 
@@ -125,55 +119,50 @@ const CreateEvent = () => {
   };
 
   const validateEvent = () => {
-    if (!event.title.trim()) return "Title is required";
-    if (event.title.length < 3 || event.title.length > 30) return "Title must be between 3 and 30 characters";
-    if (!event.startDate || !event.startTime) return "Start date and time are required";
-    if (!event.endDate || !event.endTime) return "End date and time are required";
-    if (event.description.length > 500) return "Description must not exceed 500 characters";
-    
+    if (!event.title.trim()) return 'Title is required';
+    if (event.title.length < 3 || event.title.length > 30)
+      return 'Title must be between 3 and 30 characters';
+    if (!event.startDate || !event.startTime)
+      return 'Start date and time are required';
+    if (!event.endDate || !event.endTime)
+      return 'End date and time are required';
+    if (event.description.length > 500)
+      return 'Description must not exceed 500 characters';
+
     const startDateTime = new Date(`${event.startDate}T${event.startTime}`);
     const endDateTime = new Date(`${event.endDate}T${event.endTime}`);
-    
-    if (endDateTime <= startDateTime) return "End time must be after start time";
-    
+
+    if (endDateTime <= startDateTime)
+      return 'End time must be after start time';
+
     return null;
   };
 
   const handleSubmit = async (isDraft: boolean = false) => {
     const validationError = validateEvent();
-    if (validationError && !isDraft) {
-      alert(validationError);
-      return;
-    }
+    if (validationError && !isDraft) return;
+
+    setIsSubmitting(true);
 
     const eventData = {
       ...event,
       isDraft,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('http://localhost:5000/api/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add authorization header when auth is implemented
-        },
-        body: JSON.stringify(eventData)
-      });
+      const result = await eventService.createEvent(eventData);
 
-      if (response.ok) {
-        alert(isDraft ? 'Event saved as draft!' : 'Event created successfully!');
-        navigate('/calendar');
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.message}`);
-      }
+      navigate('/calendar');
     } catch (err) {
-      console.error('Failed to create event:', err);
-      alert('Failed to create event. Please try again.');
+      alert(
+        err instanceof Error
+          ? err.message
+          : 'Failed to create event. Please try again.'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -181,8 +170,10 @@ const CreateEvent = () => {
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 py-8">
       <div className="max-w-4xl mx-auto px-6">
         <div className="bg-base-100 rounded-2xl shadow-xl border border-primary/20 p-8">
-          <h1 className="text-4xl font-bold text-primary mb-8 text-center">Create New Event</h1>
-          
+          <h1 className="text-4xl font-bold text-primary mb-8 text-center">
+            Create New Event
+          </h1>
+
           <form className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -242,7 +233,6 @@ const CreateEvent = () => {
                   className="input input-bordered w-full"
                 />
               </div>
-              
               <div>
                 <label className="block text-sm font-medium text-base-content mb-2">
                   Start Time *
@@ -254,7 +244,6 @@ const CreateEvent = () => {
                   className="input input-bordered w-full"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-base-content mb-2">
                   End Date *
@@ -266,7 +255,6 @@ const CreateEvent = () => {
                   className="input input-bordered w-full"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-base-content mb-2">
                   End Time *
@@ -305,8 +293,10 @@ const CreateEvent = () => {
             </div>
             {showRecurrenceOptions && (
               <div className="bg-base-200 p-4 rounded-lg space-y-4">
-                <h3 className="font-semibold text-base-content">Recurrence Settings</h3>
-                
+                <h3 className="font-semibold text-base-content">
+                  Recurrence Settings
+                </h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-base-content mb-2">
@@ -361,7 +351,9 @@ const CreateEvent = () => {
                   onChange={(e) => setNewTag(e.target.value)}
                   placeholder="Add a tag"
                   className="input input-bordered flex-1"
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                  onKeyPress={(e) =>
+                    e.key === 'Enter' && (e.preventDefault(), addTag())
+                  }
                 />
                 <button
                   type="button"
@@ -394,7 +386,9 @@ const CreateEvent = () => {
                   onChange={(e) => setNewParticipant(e.target.value)}
                   placeholder="Enter email address"
                   className="input input-bordered flex-1"
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addParticipant())}
+                  onKeyPress={(e) =>
+                    e.key === 'Enter' && (e.preventDefault(), addParticipant())
+                  }
                 />
                 <button
                   type="button"
@@ -465,20 +459,23 @@ const CreateEvent = () => {
               <button
                 type="button"
                 onClick={() => handleSubmit(true)}
-                className="btn btn-outline btn-secondary flex-1"
+                disabled={isSubmitting}
+                className={`btn btn-outline btn-secondary flex-1 ${isSubmitting ? 'loading' : ''}`}
               >
-                Save as Draft
+                {isSubmitting ? 'Saving...' : 'Save as Draft'}
               </button>
               <button
                 type="button"
                 onClick={() => handleSubmit(false)}
-                className="btn btn-primary flex-1"
+                disabled={isSubmitting}
+                className={`btn btn-primary flex-1 ${isSubmitting ? 'loading' : ''}`}
               >
-                Create Event
+                {isSubmitting ? 'Creating...' : 'Create Event'}
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/calendar')}
+                disabled={isSubmitting}
                 className="btn btn-ghost flex-1"
               >
                 Cancel
@@ -489,6 +486,6 @@ const CreateEvent = () => {
       </div>
     </div>
   );
-}
+};
 
 export default CreateEvent;
