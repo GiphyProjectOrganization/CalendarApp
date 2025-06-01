@@ -6,6 +6,7 @@ import { MonthView } from './components/views/monthView/MonthView';
 import { WeekView } from './components/views/WeekView';
 import { Header } from './components/layout/Header';
 import { Outlet } from 'react-router-dom';
+import CreateEvent from './pages/Events/CreateEvent';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="month" element={<MonthView />} />
             <Route index element={<MonthView />} /> {/* default */}
           </Route>
+          <Route path="/events/create" element={<CreateEvent />} />
         </Routes>
       </BrowserRouter>
 
