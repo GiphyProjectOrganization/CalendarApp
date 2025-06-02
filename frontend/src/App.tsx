@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import './App.css';
 import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import { Register } from './pages/Auth/Register';
@@ -8,38 +8,11 @@ import { Header } from './components/layout/Header';
 import { AuthContext } from '../context/authContext';
 import LoginPage from './pages/Auth/Login';
 import CreateEvent from './pages/Events/CreateEvent';
-
-
+import { useAuth } from './hook/auth-hook';
 
 function App() {
-  const [token, setToken] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
 
-  const login = useCallback((uid: string, token: string, expirationDate?: Date) => {
-    setToken(token);
-    setUserId(uid);
-    const tokenExpirationTime = expirationDate || new Date(new Date().getTime() + 1000 * 60 * 60);
-    localStorage.setItem(
-      'userData',
-      JSON.stringify({ userId: uid, token: token, expiration: tokenExpirationTime.toISOString() })
-    );
-  }, []);
-
-  const logout = useCallback(() => {
-    setToken(null);
-    setUserId(null);
-    localStorage.removeItem('userData');
-  }, []);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('userData');
-    if (stored) {
-      const data = JSON.parse(stored);
-      if (data && data.token && new Date(data.expiration) > new Date()) {
-        login(data.userId, data.token, new Date(data.expiration));
-      }
-    }
-  }, [login]);
+  const { token, userId, logout, login } = useAuth();
 
   return (
     <AuthContext.Provider value={{ isLoggedIn: !!token, userId, token, login, logout }}>
