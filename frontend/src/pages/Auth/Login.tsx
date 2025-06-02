@@ -1,6 +1,6 @@
 import { useState, ChangeEvent, FormEvent, useContext } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { AuthContext } from "../../../context/authContext";
+import { AuthContext } from "../../components/contexts/authContext/authContext";
 
 interface UserLogin {
     password: string;

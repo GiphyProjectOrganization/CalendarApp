@@ -45,6 +45,28 @@ app.post("/api/register", async (req: Request, res: Response): Promise<void> => 
     return;
   }
 
+  if (username.length < 3 || username.length >= 30) {
+    res.status(400).json({ message: "Username must be between 3 and 30 character!" });
+    return
+  }
+  if (!/\d/.test(password) || !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    res.status(400).json({ message: "Password must have one number and one symbol!" });
+    return
+  }
+  if (firstName.length < 1 || firstName.length >= 30 || !/^[A-Za-z]+$/.test(firstName)) {
+    res.status(400).json({ message: "First name must be between 1 and 30 character and include only uppercase and lowercase letters!" });
+    return
+  }
+  if (lastName.length < 1 || lastName.length >= 30 || !/^[A-Za-z]+$/.test(lastName)) {
+    res.status(400).json({ message: "last name must be between 1 and 30 character and include only uppercase and lowercase letters!" });
+    return
+  }
+  if (phoneNumber.length !== 10 || !/^\d+$/.test(phoneNumber)) {
+    res.status(400).json({ message: "Phone Number must be 10 digits and include only numbers!" });
+    return
+  }
+
+
   try {
     //connect to mongoDB 
     const client = await connectDB();
@@ -52,16 +74,28 @@ app.post("/api/register", async (req: Request, res: Response): Promise<void> => 
     const usersCollection = db.collection("users"); // choose collection 
 
     //check if user is already exist 
-    const existingUser = await usersCollection.findOne({ email });
-    if (existingUser) {
+    const existingUserEmail = await usersCollection.findOne({ email });
+    if (existingUserEmail) {
       res.status(409).json({ message: "Email already in use" });
+      return;
+    }
+    const existingUserUsername = await usersCollection.findOne({ username });
+    if (existingUserUsername) {
+      res.status(409).json({ message: "Username already in use" });
+      return;
+    }
+    const existingUserPhone = await usersCollection.findOne({ phoneNumber });
+    if (existingUserPhone) {
+      res.status(409).json({ message: "Phone number already in use" });
       return;
     }
 
     // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     //make the obj with hash password 
-    const newUser = { username, email, firstName, lastName, phoneNumber, password: hashedPassword };
+    const newUser = {
+      username, email, isAdmin: false, firstName, lastName, phoneNumber, password: hashedPassword
+    };
     // insert object in database/collection
     await usersCollection.insertOne(newUser);
 
@@ -85,6 +119,11 @@ app.post("/api/login", async (req: Request, res: Response): Promise<void> => {
   if (!email?.trim() || !password?.trim()) {
     res.status(400).json({ message: "Please enter valid credentials." });
     return;
+  }
+
+  if (!/\d/.test(password) || !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    res.status(400).json({ message: "Password must have one number and one symbol!" });
+    return
   }
 
   try {

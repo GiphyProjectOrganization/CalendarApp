@@ -1,6 +1,6 @@
 import { useState, ChangeEvent, FormEvent, useContext } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { AuthContext } from "../../../context/authContext";
+import { AuthContext } from "../../components/contexts/authContext/authContext";
 
 interface UserRegister {
     username: string;
@@ -50,7 +50,7 @@ export function Register() {
         if (user.lastName.length < 1 || user.lastName.length >= 30 || !/^[A-Za-z]+$/.test(user.lastName)) {
             return alert("last name must be between 1 and 30 character and include only uppercase and lowercase letters!")
         }
-        if (user.phoneNumber.length === 10 || !/^\d+$/.test(user.phoneNumber)) {
+        if (user.phoneNumber.length !== 10 || !/^\d+$/.test(user.phoneNumber)) {
             return alert("Phone Number must be 10 digits and include only numbers!")
         }
 

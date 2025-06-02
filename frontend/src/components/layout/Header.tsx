@@ -3,7 +3,7 @@ import ThemeSwap from "../contexts/theme/ThemeSwap";
 import { Link } from "react-router-dom";
 import { ViewSwitcher } from "../views/ViewSwitcher";
 import { WeatherForecast } from "../weather/WeatherForecast";
-import { AuthContext } from "../../../context/authContext";
+import { AuthContext } from "../contexts/authContext/authContext";
 
 export const Header: React.FC = () => {
   const { isLoggedIn, logout } = useContext(AuthContext);
