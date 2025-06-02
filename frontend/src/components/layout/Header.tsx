@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ViewSwitcher } from '../views/ViewSwitcher';
 import { WeatherForecast } from '../weather/WeatherForecast';
 
-const Header = () => (
+export const Header = () => (
   <div className="navbar bg-base-100 shadow-md">
     <div className="navbar-start">
       <ThemeSwap />

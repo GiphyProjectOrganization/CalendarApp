@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { WEATHER_API_KEY, WEATHER_API_URL } from "../../constants";
+import { WEATHER_API_KEY, WEATHER_API_URL} from "../../constants";
 
 interface Weather {
   id: number;
@@ -26,6 +26,7 @@ export const WeatherForecast: React.FC = () => {
   const [forecast, setForecast] = useState<DailyForecast[]>([]);
   const [unit, setUnit] = useState<"metric" | "imperial">("metric");
   const [countryCode, setCountryCode] = useState<string | null>(null);
+  const [city, setCity] = useState<string | null>(null)
 
     useEffect(() => {
         fetch('https://ipapi.co/json/')
@@ -34,6 +35,7 @@ export const WeatherForecast: React.FC = () => {
             setLat(data.latitude);
             setLon(data.longitude);
             setCountryCode(data.country_code);
+            setCity(data.city)
 
             const fahrenheitCountries = ['US', 'BS', 'BZ', 'KY', 'PW'];
             setUnit(fahrenheitCountries.includes(data.country_code) ? 'imperial' : 'metric');
@@ -65,6 +67,7 @@ export const WeatherForecast: React.FC = () => {
               className="w-6 h-6"
             />
             <span>{Math.round(current.temp.day)}°{unit === 'metric' ? 'C' : 'F'}</span>
+            {city && <span className="text-sm text-gray-500 ml-2">({city})</span>}
           </>
         )}
       </div>

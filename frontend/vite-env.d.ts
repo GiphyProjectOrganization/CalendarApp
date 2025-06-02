@@ -1,5 +1,5 @@
 interface ImportMetaEnv {
-  readonly WEATHER_API: string;
+  readonly VITE_WEATHER_API: string;
 }
 
 interface ImportMeta {
