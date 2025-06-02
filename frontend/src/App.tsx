@@ -5,7 +5,7 @@ import { Register } from './pages/Auth/Register';
 import { MonthView } from './components/views/monthView/MonthView';
 import { WeekView } from './components/views/WeekView';
 import { Header } from './components/layout/Header';
-import { AuthContext } from '../context/authContext';
+import { AuthContext } from './components/contexts/authContext/authContext';
 import LoginPage from './pages/Auth/Login';
 import CreateEvent from './pages/Events/CreateEvent';
 import { useAuth } from './hook/auth-hook';
