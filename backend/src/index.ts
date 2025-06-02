@@ -3,6 +3,8 @@ import cors from "cors";
 import { client, connectDB } from "./db";
 import bcrypt from "bcrypt";
 import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
+import { ObjectId, WithId, Document } from "mongodb";
 
 const app = express();
 const PORT = 5000;
@@ -70,6 +72,58 @@ app.post("/api/register", async (req: Request, res: Response): Promise<void> => 
     console.error(err);
     res.status(500).json({ message: "Server error" });
     return;
+  }
+});
+
+// login
+app.post("/api/login", async (req: Request, res: Response): Promise<void> => {
+  const { email, password } = req.body as {
+    email: string;
+    password: string;
+  };
+
+  if (!email?.trim() || !password?.trim()) {
+    res.status(400).json({ message: "Please enter valid credentials." });
+    return;
+  }
+
+  try {
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const usersCollection = db.collection("users");
+
+    const existingUser = await usersCollection.findOne({ email });
+    if (!existingUser) {
+      res.status(401).json({ message: "Invalid email or password" });
+      return;
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(password, existingUser.password);
+    if (!isPasswordCorrect) {
+      res.status(400).json({ message: "Password is incorrect" });
+      return;
+    }
+
+    const token = jwt.sign(
+      { userId: existingUser._id, email: existingUser.email },
+      'secret_token_do_not_share',
+      { expiresIn: '1h' }
+    );
+
+    res.status(201).json({
+      token,
+      userId: existingUser._id,
+      user: {
+        username: existingUser.username,
+        email: existingUser.email,
+        firstName: existingUser.firstName,
+        lastName: existingUser.lastName,
+        phoneNumber: existingUser.phoneNumber
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

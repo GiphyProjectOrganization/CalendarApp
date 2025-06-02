@@ -1,5 +1,6 @@
-import { useState, ChangeEvent, FormEvent } from "react";
-import { NavLink } from "react-router-dom";
+import { useState, ChangeEvent, FormEvent, useContext } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { AuthContext } from "../../../context/authContext";
 
 interface UserRegister {
     username: string;
@@ -11,6 +12,8 @@ interface UserRegister {
 }
 
 export function Register() {
+    const navigate = useNavigate();
+    const auth = useContext(AuthContext);
 
     const [user, setUser] = useState<UserRegister>({
         username: '',
@@ -44,6 +47,9 @@ export function Register() {
         if (user.firstName.length < 1 || user.firstName.length >= 30 || !/^[A-Za-z]+$/.test(user.firstName)) {
             return alert("First name must be between 1 and 30 character and include only uppercase and lowercase letters!")
         }
+        if (user.lastName.length < 1 || user.lastName.length >= 30 || !/^[A-Za-z]+$/.test(user.lastName)) {
+            return alert("last name must be between 1 and 30 character and include only uppercase and lowercase letters!")
+        }
         if (user.phoneNumber.length === 10 || !/^\d+$/.test(user.phoneNumber)) {
             return alert("Phone Number must be 10 digits and include only numbers!")
         }
@@ -57,6 +63,8 @@ export function Register() {
             const data = await res.json();
             if (res.ok) {
                 alert("Registration successful!");
+                auth.login();
+                navigate('/');
             } else {
                 alert(`Error: ${data.message}`);
             }

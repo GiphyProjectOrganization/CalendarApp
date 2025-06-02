@@ -28,32 +28,32 @@ const CreateEvent = () => {
 
   const updateEvent =
     (field: keyof Event) =>
-    (
-      e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-    ) => {
-      const value =
-        e.target.type === 'checkbox'
-          ? (e.target as HTMLInputElement).checked
-          : e.target.value;
-      setEvent((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
-    };
+      (
+        e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+      ) => {
+        const value =
+          e.target.type === 'checkbox'
+            ? (e.target as HTMLInputElement).checked
+            : e.target.value;
+        setEvent((prev) => ({
+          ...prev,
+          [field]: value,
+        }));
+      };
 
   const updateRecurrence =
     (field: string) =>
-    (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      const value =
-        e.target.type === 'number' ? parseInt(e.target.value) : e.target.value;
-      setEvent((prev) => ({
-        ...prev,
-        recurrencePattern: {
-          ...prev.recurrencePattern,
-          [field]: value,
-        } as Event['recurrencePattern'],
-      }));
-    };
+      (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const value =
+          e.target.type === 'number' ? parseInt(e.target.value) : e.target.value;
+        setEvent((prev) => ({
+          ...prev,
+          recurrencePattern: {
+            ...prev.recurrencePattern,
+            [field]: value,
+          } as Event['recurrencePattern'],
+        }));
+      };
 
   const addTag = () => {
     if (newTag.trim() && !event.tags.includes(newTag.trim())) {
@@ -155,22 +155,11 @@ const CreateEvent = () => {
 
     try {
       const result = await eventService.createEvent(eventData);
-<<<<<<< HEAD
       alert(result.message);
       navigate('/calendar');
     } catch (err) {
       console.error('Failed to create event:', err);
       alert(err instanceof Error ? err.message : 'Failed to create event. Please try again.');
-=======
-
-      navigate('/calendar');
-    } catch (err) {
-      alert(
-        err instanceof Error
-          ? err.message
-          : 'Failed to create event. Please try again.'
-      );
->>>>>>> eca497ad0f1a7a71ac57bee0eca01a3c54cdf724
     } finally {
       setIsSubmitting(false);
     }
