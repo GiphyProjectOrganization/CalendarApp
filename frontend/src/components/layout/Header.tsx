@@ -6,7 +6,7 @@ import { WeatherForecast } from "../weather/WeatherForecast";
 import { AuthContext } from "../../../context/authContext";
 
 export const Header: React.FC = () => {
-  const { isLoggedIn } = useContext(AuthContext);
+  const { isLoggedIn, logout } = useContext(AuthContext);
 
   return (
     <div className="navbar bg-base-100 shadow-md">
@@ -23,14 +23,23 @@ export const Header: React.FC = () => {
         <ViewSwitcher />
         {!isLoggedIn && (
           <Link
-            className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-white px-3 py-2"
+            className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-white px-3 mr-1 py-2"
             to="/login"
           >
             Login
           </Link>
         )}
+        {isLoggedIn && (
+          <Link
+            className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-white px-3 py-2 mr-1"
+            onClick={logout}
+            to='/'
+          >
+            LogOut
+          </Link>
+        )}
         <Link
-          className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-white px-3 py-2"
+          className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-white px-3 mr-1 py-2"
           to="/register"
         >
           Register
