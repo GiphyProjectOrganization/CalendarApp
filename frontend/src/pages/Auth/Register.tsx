@@ -1,6 +1,7 @@
 import { useState, ChangeEvent, FormEvent, useContext } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../components/contexts/authContext/authContext";
+import { useAuth } from "../../hook/auth-hook";
 
 interface UserRegister {
     username: string;

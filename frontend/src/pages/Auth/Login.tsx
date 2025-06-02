@@ -18,7 +18,7 @@ export default function LoginPage() {
         email: '',
         password: ''
     });
-    const auth = useContext(AuthContext)
+    const auth = useContext(AuthContext);
     const navigate = useNavigate();
 
     const logIn = async (e: FormEvent<HTMLFormElement>) => {
