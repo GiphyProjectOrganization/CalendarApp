@@ -23,15 +23,28 @@ app.listen(PORT, () => {
 
 
 // register
-app.post("/api/register", async (req: Request, res: Response): Promise<void> => {
-  const { username, firstName, lastName, password, phoneNumber, email } = req.body as {
-    username: string;
-    firstName: string;
-    lastName: string;
-    password: string;
-    phoneNumber: string;
-    email: string;
-  };
+interface RegisterRequestBody {
+  username: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+  phoneNumber: string;
+  email: string;
+}
+
+interface User {
+  _id?: ObjectId;
+  username: string;
+  email: string;
+  isAdmin: boolean;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  password: string;
+}
+
+app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res: Response): Promise<void> => {
+  const { username, firstName, lastName, password, phoneNumber, email } = req.body;
 
   if (
     !email?.trim() ||
@@ -47,33 +60,30 @@ app.post("/api/register", async (req: Request, res: Response): Promise<void> => 
 
   if (username.length < 3 || username.length >= 30) {
     res.status(400).json({ message: "Username must be between 3 and 30 character!" });
-    return
+    return;
   }
   if (!/\d/.test(password) || !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
     res.status(400).json({ message: "Password must have one number and one symbol!" });
-    return
+    return;
   }
   if (firstName.length < 1 || firstName.length >= 30 || !/^[A-Za-z]+$/.test(firstName)) {
     res.status(400).json({ message: "First name must be between 1 and 30 character and include only uppercase and lowercase letters!" });
-    return
+    return;
   }
   if (lastName.length < 1 || lastName.length >= 30 || !/^[A-Za-z]+$/.test(lastName)) {
     res.status(400).json({ message: "last name must be between 1 and 30 character and include only uppercase and lowercase letters!" });
-    return
+    return;
   }
   if (phoneNumber.length !== 10 || !/^\d+$/.test(phoneNumber)) {
     res.status(400).json({ message: "Phone Number must be 10 digits and include only numbers!" });
-    return
+    return;
   }
 
-
   try {
-    //connect to mongoDB 
     const client = await connectDB();
-    const db = client.db("calendar"); // choose database 
-    const usersCollection = db.collection("users"); // choose collection 
+    const db = client.db("calendar");
+    const usersCollection = db.collection<User>("users");
 
-    //check if user is already exist 
     const existingUserEmail = await usersCollection.findOne({ email });
     if (existingUserEmail) {
       res.status(409).json({ message: "Email already in use" });
@@ -90,17 +100,43 @@ app.post("/api/register", async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    //make the obj with hash password 
-    const newUser = {
-      username, email, isAdmin: false, firstName, lastName, phoneNumber, password: hashedPassword
+    const newUser: User = {
+      username,
+      email,
+      isAdmin: false,
+      firstName,
+      lastName,
+      phoneNumber,
+      password: hashedPassword
     };
-    // insert object in database/collection
+
     await usersCollection.insertOne(newUser);
 
-    //return alert this way because backend don't have alert keyword
-    res.status(201).json({ message: "User registered successfully" });
+    const insertedUser = await usersCollection.findOne({ email });
+
+    if (!insertedUser) {
+      res.status(500).json({ message: "User registration failed." });
+      return;
+    }
+
+    const token = jwt.sign(
+      { userId: insertedUser._id, email: newUser.email },
+      'secret_token_do_not_share',
+      { expiresIn: '1h' }
+    );
+
+    res.status(201).json({
+      token,
+      userId: insertedUser._id,
+      user: {
+        username: newUser.username,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        phoneNumber: newUser.phoneNumber
+      }
+    });
     return;
   } catch (err) {
     console.error(err);
