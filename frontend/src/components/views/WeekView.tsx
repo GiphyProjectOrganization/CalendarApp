@@ -1,7 +1,11 @@
 import React from "react";
 import { generateHours } from "../../services/calendarService";
 
-export const WeekView: React.FC<{ startDate?: Date }> = ({ startDate = new Date() }) => {
+interface WeekViewProps {
+  startDate?: Date;
+}
+
+export function WeekView({ startDate = new Date() }: WeekViewProps) {
     const hours = generateHours();
 
     const getWeekStart = (date: Date) => {

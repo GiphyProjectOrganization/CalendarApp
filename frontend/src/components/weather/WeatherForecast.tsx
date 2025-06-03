@@ -20,13 +20,14 @@ interface DailyForecast {
   weather: Weather[];
 }
 
-export const WeatherForecast: React.FC = () => {
+export function WeatherForecast() {
   const [lat, setLat] = useState<number | null>(null);
   const [lon, setLon] = useState<number | null>(null);
   const [forecast, setForecast] = useState<DailyForecast[]>([]);
   const [unit, setUnit] = useState<"metric" | "imperial">("metric");
   const [countryCode, setCountryCode] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null)
+  const [currentWeather, setCurrentWeather] = useState<any | null>(null);
 
     useEffect(() => {
         fetch('https://ipapi.co/json/')
@@ -49,6 +50,7 @@ export const WeatherForecast: React.FC = () => {
             .then(res => res.json())
             .then(data => {
             setForecast(data.daily.slice(0, 7));
+            setCurrentWeather(data.current);
             })
             .catch(err => console.error('Weather API error:', err));
         }

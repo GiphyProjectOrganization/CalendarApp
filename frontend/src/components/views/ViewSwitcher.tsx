@@ -7,7 +7,7 @@ const views = [
   { name: "Month", path: "/calendar/month" },
 ];
 
-export const ViewSwitcher: React.FC = () => {
+export const ViewSwitcher = () => {
   const location = useLocation();
 
   const currentView = views.find(v => location.pathname.startsWith(v.path)) || views[2];

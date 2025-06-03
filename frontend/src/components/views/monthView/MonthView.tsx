@@ -3,16 +3,27 @@ import { MonthGrid } from '../../../services/calendarService';
 import './MonthView.css';
 import 'date-holidays';
 import 'date-holidays-parser';
+import { useNavigate } from 'react-router-dom';
 import Holidays from 'date-holidays';
 
 const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export const MonthView: React.FC = () => {
+export const MonthView = () => {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [isHexTheme, setIsHexTheme] = useState(false);
   const [countryCode, setCountryCode] = useState()
+  const navigate = useNavigate();
+
+  const handleDateClick = (date: Date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const dateString = `${yyyy}-${mm}-${dd}`;
+    console.log('Clicked date:', date, 'dateString:', dateString);
+    navigate(`/calendar/day?date=${dateString}`);
+  };
 
   const dates = MonthGrid(currentYear, currentMonth, 1);
 
@@ -113,7 +124,11 @@ export const MonthView: React.FC = () => {
           {chunkDates(dates, 7).map((week, rowIdx) => (
             <div key={rowIdx} className={`honey-row ${rowIdx % 2 === 1 ? 'offset' : ''}`}>
               {week.map((date, idx) => (
-                <div key={idx} className={`hex-outer ${!isCurrentMonth(date) ? 'opacity-50' : ''} ${isToday(date) ? 'today' : ''}`}>
+                <div 
+                key={idx} 
+                onClick={() => handleDateClick(date)}
+                className={`hex-outer ${!isCurrentMonth(date) ? 'opacity-50' : ''} ${isToday(date) ? 'today' : ''}`}
+                >
                   <div className="hex-inner">
                     {date.getDate()}
                   </div>
@@ -138,6 +153,7 @@ export const MonthView: React.FC = () => {
             return (
               <div
                 key={idx}
+                onClick={() => handleDateClick(date)}
                 title={holidayNames.length ? holidayNames.join(', ') : undefined}
                 className={[
                   baseClasses,
