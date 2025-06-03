@@ -164,7 +164,7 @@ export function Register() {
                                         onChange={updateUser('phoneNumber')}
                                         name="phone"
                                         id=""
-                                        placeholder="+3598238605432"
+                                        placeholder="0823860543"
                                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
                                         required
                                     />
