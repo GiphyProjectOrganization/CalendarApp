@@ -86,11 +86,11 @@ export function Register() {
 
     return (
         <>
-            <section className="min-h-screen bg-gradient-to-br from-emerald-100 via-lime-100 to-white flex items-center justify-center">
+            <section className="min-h-screen bg-gradient-to-br  flex items-center justify-center">
                 <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-4 lg:px-8">
                     <div className="sm:mx-auto sm:w-full sm:max-w-xl">
-                        <div className="w-full p-10 space-y-4 md:space-y-6 sm:p-10 bg-white/90 rounded-2xl shadow-2xl border-2 border-emerald-200">
-                            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-emerald-700 md:text-4xl text-center">
+                        <div className="w-full p-10 space-y-4 md:space-y-6 sm:p-10  rounded-2xl shadow-2xl border-2">
+                            <h1 className="text-3xl font-extrabold leading-tight tracking-tight  md:text-4xl text-center">
                                 Create Your Calendar Account
                             </h1>
                             <form className="space-y-4 md:space-y-6" >
@@ -249,13 +249,13 @@ export function Register() {
                                     type="submit"
                                     // disabled={loading}
                                     onClick={register}
-                                    className="w-full bg-gradient-to-r from-emerald-500 to-lime-500 text-white py-3 px-4 rounded-xl font-bold text-lg shadow-lg transition-opacity "
+                                    className="w-full bg-gradient-to-r   py-3 px-4 rounded-xl font-bold text-lg shadow-lg transition-opacity "
                                 >
                                     Create an account
                                 </button>
-                                <p className="text-base font-light text-gray-500 dark:text-gray-400 text-center">
+                                <p className="text-base font-light  text-center">
                                     Already have an account?{" "}
-                                    <span className="font-semibold text-emerald-700 hover:text-emerald-500">
+                                    <span className="font-semibold  ">
                                         <NavLink to='/login'>Login here!</NavLink>
                                     </span>
                                 </p>
