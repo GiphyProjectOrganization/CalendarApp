@@ -249,7 +249,7 @@ export function Register() {
                                     type="submit"
                                     // disabled={loading}
                                     onClick={register}
-                                    className="w-full bg-gradient-to-r   py-3 px-4 rounded-xl font-bold text-lg shadow-lg transition-opacity "
+                                    className="w-full bg-gradient-to-r py-3 px-4 rounded-xl font-bold text-lg shadow-lg transition-opacity duration-200 hover:opacity-80 active:scale-95"
                                 >
                                     Create an account
                                 </button>
