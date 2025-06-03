@@ -11,6 +11,7 @@ import CreateEvent from './pages/Events/CreateEvent';
 import { DayView } from './components/views/DayView';
 import { useAuth } from './hook/auth-hook';
 import { WEATHER_API_KEY, WEATHER_API_URL } from './constants';
+import { ProfileCard } from './components/profile/ProfileCard';
 
 function App() {
   const { token, userId, logout, login } = useAuth();
@@ -43,6 +44,7 @@ function App() {
           <Route path='/register' element={<Register />} />
           <Route path='/' element={<MonthView />} />
           <Route path='/login' element={<LoginPage />} />
+          <Route path='/profileCard' element={<ProfileCard />} />
           <Route path="/calendar" element={<Outlet />}>
             <Route path="day" element={<DayView forecast={forecast} unit={unit} />} />
             <Route path="week" element={<WeekView />} />

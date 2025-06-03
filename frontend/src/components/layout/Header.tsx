@@ -21,6 +21,24 @@ export function Header() {
           + New Event
         </Link>
         <ViewSwitcher />
+
+        {isLoggedIn && (
+          <Link
+            className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-white px-3 mr-1 py-2"
+            to="/profileCard"
+          >
+            My Profile
+          </Link>
+        )}
+        {isLoggedIn &&
+          <Link
+            className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-white px-3 py-2 mr-1"
+            onClick={logout}
+            to='/'
+          >
+            LogOut
+          </Link>
+        }
         {!isLoggedIn && (
           <Link
             className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-white px-3 mr-1 py-2"
@@ -29,21 +47,13 @@ export function Header() {
             Login
           </Link>
         )}
-        {isLoggedIn && (
+        {!isLoggedIn &&
           <Link
-            className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-white px-3 py-2 mr-1"
-            onClick={logout}
-            to='/'
+            className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-white px-3 mr-1 py-2"
+            to="/register"
           >
-            LogOut
-          </Link>
-        )}
-        <Link
-          className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-white px-3 mr-1 py-2"
-          to="/register"
-        >
-          Register
-        </Link>
+            Register
+          </Link>}
       </div>
     </div>
   );
