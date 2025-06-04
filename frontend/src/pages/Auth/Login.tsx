@@ -62,8 +62,8 @@ export default function LoginPage() {
 
     return (
         <>
-            <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-                <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+            <div className="flex min-h-full flex-1 flex-col justify-center bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 px-6 py-12 lg:px-8">
+                <div className="bg-base-100 max-w-lg w-full mx-auto rounded-2xl shadow-xl border border-primary/20 p-6">                <div className="sm:mx-auto sm:w-full sm:max-w-sm">
                     <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight ">
                         Sign in to your account
                     </h2>
@@ -110,7 +110,7 @@ export default function LoginPage() {
                         <div>
                             <button
                                 type="submit"
-                                className="w-full bg-gradient-to-r py-3 px-4 rounded-xl font-bold text-lg shadow-lg transition-opacity duration-200 hover:opacity-80 active:scale-95"
+                                className="btn btn-primary w-full bg-gradient-to-r py-3 px-4 rounded-xl font-bold text-lg shadow-lg transition-opacity duration-200 hover:opacity-80 active:scale-95"
                             >
                                 Sign in
                             </button>
@@ -124,6 +124,7 @@ export default function LoginPage() {
                         </a>
                     </p>
                 </div>
+              </div>
             </div>
         </>
     )

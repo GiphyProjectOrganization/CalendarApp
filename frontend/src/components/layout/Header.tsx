@@ -17,14 +17,14 @@ export function Header() {
         <WeatherForecast />
       </div>
       <div className="navbar-end">
-        <Link to="/events/create" className="btn btn-primary btn-sm mr-2">
+        <Link to="/events/create" className="btn btn-primary hover:bg-accent hover:text-accent-content btn-sm mr-1">
           + New Event
         </Link>
         <ViewSwitcher />
 
         {isLoggedIn && (
           <Link
-            className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-white px-3 mr-1 py-2"
+            className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-primary-content px-3 mr-1 py-2"
             to="/profileCard"
           >
             My Profile
@@ -32,7 +32,7 @@ export function Header() {
         )}
         {isLoggedIn &&
           <Link
-            className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-white px-3 py-2 mr-1"
+            className="btn btn-sm btn-ghost bg-accent text-base-content hover:bg-primary hover:text-primary-content px-3 py-2 mr-1"
             onClick={logout}
             to='/'
           >

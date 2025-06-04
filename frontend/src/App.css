@@ -26,7 +26,8 @@
   --color-info: #3ABFF8;
   --color-success: #36D399;
   --color-warning: #fbbd23;
-  --color-error: #F87272;
+  --color-error: #B91C1C;
+  --color-error-content: #ffffff;
 }
 
 @plugin "daisyui/theme" {
@@ -55,7 +56,8 @@
   --color-info: #3ABFF8;
   --color-success: #36D399;
   --color-warning: #fbbd23;
-  --color-error: #F87272;
+  --color-error: #EF4444;
+  --color-error-content: #ffffff;
 }
 
 @plugin "daisyui/theme" {
@@ -102,7 +104,7 @@
   --color-accent: #ffdd00; /* school-bus-yellow */
   --color-accent-content: #000000;
 
-  --color-neutral: #4a3200; /* deep brown for contrast */
+  --color-neutral: #bc8f8f; /* deep brown for contrast */
   --color-neutral-content: #ffffff;
 
   --color-base-100: #fffaf0;
@@ -113,5 +115,6 @@
   --color-info: #6cb2eb;
   --color-success: #36D399;
   --color-warning: #ffc300; /* mikado-yellow */
-  --color-error: #F87272;
+  --color-error: #E11D48;       /* deep rose red */
+  --color-error-content: #ffffff;
 }

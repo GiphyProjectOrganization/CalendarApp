@@ -14,7 +14,7 @@ export const ViewSwitcher = () => {
 
   return (
     <div className="dropdown dropdown-end">
-      <label tabIndex={0} className="btn m-1 capitalize">
+      <label tabIndex={0} className="btn btn-primary btn-sm hover:bg-accent hover:text-accent-content capitalize mr-1">
         {currentView.name} View
         <svg
           xmlns="http://www.w3.org/2000/svg"

@@ -13,7 +13,7 @@ export const MonthView = () => {
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [isHexTheme, setIsHexTheme] = useState(false);
-  const [countryCode, setCountryCode] = useState()
+  const [countryCode, setCountryCode] = useState<string | undefined>();
   const navigate = useNavigate();
 
   const handleDateClick = (date: Date) => {
@@ -21,13 +21,11 @@ export const MonthView = () => {
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const dd = String(date.getDate()).padStart(2, '0');
     const dateString = `${yyyy}-${mm}-${dd}`;
-    console.log('Clicked date:', date, 'dateString:', dateString);
     navigate(`/calendar/day?date=${dateString}`);
   };
 
   const dates = MonthGrid(currentYear, currentMonth, 1);
 
-  //This is for honeycomb grid in honey theme
   useEffect(() => {
     const updateHexTheme = () => {
       const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -51,33 +49,31 @@ export const MonthView = () => {
     date.getFullYear() === today.getFullYear();
 
   const isWeekend = (date: Date) => {
-    const day = date.getDay() 
-    return day === 0 || day === 6
-  }
+    const day = date.getDay();
+    return day === 0 || day === 6;
+  };
 
-  //this section is to get holidays this month
   useEffect(() => {
-  fetch('https://ipapi.co/json/')
-    .then(res => res.json())
-    .then(data => {
-      setCountryCode(data.country_code);
-    })
-    .catch(err => console.error('Geolocation failed:', err));
+    fetch('https://ipapi.co/json/')
+      .then(res => res.json())
+      .then(data => {
+        setCountryCode(data.country_code);
+      })
+      .catch(err => console.error('Geolocation failed:', err));
   }, []);
- 
+
   const hd = useMemo(() => {
     if (!countryCode) return null;
     return new Holidays(countryCode);
   }, [countryCode]);
-    
-  const isHoliday = (date: Date) => {
+
+  const isHoliday = (date: Date): string[] => {
     const holiday = hd?.isHoliday(date);
     if (!holiday) return [];
-
     const entries = Array.isArray(holiday) ? holiday : [holiday];
     return entries
-    .filter(e => e.type === 'public')
-    .map(e => e.name);
+      .filter(e => e.type === 'public')
+      .map(e => e.name);
   };
 
   const isCurrentMonth = (date: Date) =>
@@ -106,11 +102,11 @@ export const MonthView = () => {
   return (
     <div className="max-w-5xl bg-white-100 mx-auto p-4">
       <div className="flex items-center justify-between mb-4">
-        <button onClick={prevMonth} className="px-2 py-1 bg-secondary rounded">←</button>
-        <h2 className="text-xl font-bold">
+        <button onClick={prevMonth} className="px-2 py-1 bg-secondary text-secondary-content rounded">←</button>
+        <h2 className="text-xl font-bold text-base-content">
           {new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} {currentYear}
         </h2>
-        <button onClick={nextMonth} className="px-2 py-1 bg-secondary rounded">→</button>
+        <button onClick={nextMonth} className="px-2 py-1 bg-secondary text-secondary-content rounded">→</button>
       </div>
 
       <div className="grid grid-cols-7 text-center text-base-content font-medium border-b">
@@ -125,9 +121,9 @@ export const MonthView = () => {
             <div key={rowIdx} className={`honey-row ${rowIdx % 2 === 1 ? 'offset' : ''}`}>
               {week.map((date, idx) => (
                 <div 
-                key={idx} 
-                onClick={() => handleDateClick(date)}
-                className={`hex-outer ${!isCurrentMonth(date) ? 'opacity-50' : ''} ${isToday(date) ? 'today' : ''}`}
+                  key={idx} 
+                  onClick={() => handleDateClick(date)}
+                  className={`hex-outer ${!isCurrentMonth(date) ? 'opacity-50' : ''} ${isToday(date) ? 'today' : ''}`}
                 >
                   <div className="hex-inner">
                     {date.getDate()}
@@ -142,31 +138,25 @@ export const MonthView = () => {
           {dates.map((date, idx) => {
             const holidayNames = isHoliday(date);
 
-            const baseClasses =
-              'relative border rounded-sm p-2 h-24 text-sm text-base-content transform transition-transform duration-200 ease-in-out hover:scale-105 hover:shadow-lg hover:z-10';
-
-            const currentMonthClass = isCurrentMonth(date) ? 'bg-primary' : 'text-neutral bg-accent';
-            const weekendClass = isWeekend(date) && isCurrentMonth(date) ? 'bg-secondary' : '';
-            const holidayClass = holidayNames.length && isCurrentMonth(date) ? 'bg-secondary' : '';
-            const todayClass = isToday(date) ? 'bg-neutral font-bold border-base-content' : '';
+            const cellClasses = [
+              'relative border rounded-sm p-2 h-24 text-sm transition-transform hover:scale-105 hover:shadow-lg hover:z-10 cursor-pointer',
+              isCurrentMonth(date) ? 'bg-primary text-primary-content' : 'bg-accent text-accent-content opacity-50',
+              isWeekend(date) && isCurrentMonth(date) ? 'bg-secondary text-secondary-content' : '',
+              holidayNames.length > 0 && isCurrentMonth(date) ? 'bg-error text-error-content border-error font-semibold' : '',
+              isToday(date) ? 'border-neutral font-bold' : '',
+            ].filter(Boolean).join(' ');
 
             return (
               <div
                 key={idx}
                 onClick={() => handleDateClick(date)}
-                title={holidayNames.length ? holidayNames.join(', ') : undefined}
-                className={[
-                  baseClasses,
-                  currentMonthClass,
-                  weekendClass,
-                  holidayClass,
-                  todayClass
-                ].join(' ')}
+                title={holidayNames.length > 1 ? holidayNames.join(', ') : undefined}
+                className={cellClasses}
               >
-                {date.getDate()}
+                <div>{date.getDate()}</div>
                 {holidayNames.length > 0 && (
-                  <div className="text-xs mt-1 text-accent-content">
-                    {holidayNames.join(', ')}
+                  <div className="mt-1 text-xs bg-error-content text-error px-2 py-0.5 rounded-full inline-block">
+                    {holidayNames[0]}
                   </div>
                 )}
               </div>

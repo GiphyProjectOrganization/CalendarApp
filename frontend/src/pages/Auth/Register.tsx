@@ -86,12 +86,12 @@ export function Register() {
 
     return (
         <>
-            <section className="min-h-screen bg-gradient-to-br  flex items-center justify-center">
+            <section className="min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 flex items-center justify-center">
                 <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-4 lg:px-8">
-                    <div className="sm:mx-auto sm:w-full sm:max-w-xl">
+                    <div className="bg-base-100 sm:mx-auto sm:w-full sm:max-w-xl">
                         <div className="w-full p-10 space-y-4 md:space-y-6 sm:p-10  rounded-2xl shadow-2xl border-2">
-                            <h1 className="text-3xl font-extrabold leading-tight tracking-tight  md:text-4xl text-center">
-                                Create Your Calendar Account
+                            <h1 className="text-3xl font-bold text-primary leading-tight tracking-tight  md:text-4xl text-center">
+                                Create Your TimeBuddy Account
                             </h1>
                             <form className="space-y-4 md:space-y-6" >
                                 <div>
@@ -249,7 +249,7 @@ export function Register() {
                                     type="submit"
                                     // disabled={loading}
                                     onClick={register}
-                                    className="w-full bg-gradient-to-r py-3 px-4 rounded-xl font-bold text-lg shadow-lg transition-opacity duration-200 hover:opacity-80 active:scale-95"
+                                    className="btn btn-primary w-full bg-gradient-to-r py-3 px-4 rounded-xl font-bold text-lg shadow-lg transition-opacity duration-200 hover:opacity-80 active:scale-95"
                                 >
                                     Create an account
                                 </button>
