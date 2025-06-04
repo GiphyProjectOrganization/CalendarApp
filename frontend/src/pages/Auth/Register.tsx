@@ -86,7 +86,7 @@ export function Register() {
 
     return (
         <>
-            <section className="min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 flex items-center justify-center">
+            <section className="min-h-screen from-primary/10 via-secondary/10 to-accent/10 flex items-center justify-center">
                 <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-4 lg:px-8">
                     <div className="bg-base-100 sm:mx-auto sm:w-full sm:max-w-xl">
                         <div className="w-full p-10 space-y-4 md:space-y-6 sm:p-10  rounded-2xl shadow-2xl border-2">
@@ -97,7 +97,7 @@ export function Register() {
                                 <div>
                                     <label
                                         htmlFor="email"
-                                        className="block mb-2 text-sm font-medium text-gray-900"
+                                        className="block mb-2 text-sm font-medium "
                                     >
                                         Your email
                                     </label>
@@ -108,14 +108,14 @@ export function Register() {
                                         name="email"
                                         id="email"
                                         placeholder="name@yahoo.com"
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                                        className=" text-sm rounded-lg outline-1 focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
                                         required
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                                     <div className="sm:col-span-3">
-                                        <label htmlFor="first-name" className="block text-sm/6 font-medium text-gray-900">
+                                        <label htmlFor="first-name" className="block text-sm/6 font-medium ">
                                             First name
                                         </label>
                                         <div className="mt-2">
@@ -127,13 +127,13 @@ export function Register() {
                                                 placeholder="John"
                                                 type="text"
                                                 autoComplete="given-name"
-                                                className="block w-full rounded-md bg-gray-50 px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                                                className="block w-full rounded-md  px-3 py-1.5 text-base  outline-1 -outline-offset-1  focus:outline-2 focus:-outline-offset-2  sm:text-sm/6"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="sm:col-span-3">
-                                        <label htmlFor="last-name" className="block text-sm/6 font-medium text-gray-900">
+                                        <label htmlFor="last-name" className="block text-sm/6 font-medium ">
                                             Last name
                                         </label>
                                         <div className="mt-2">
@@ -145,7 +145,7 @@ export function Register() {
                                                 placeholder="Doe"
                                                 type="text"
                                                 autoComplete="family-name"
-                                                className="block w-full rounded-md bg-gray-50 px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                                                className="block w-full rounded-md  px-3 py-1.5 text-base  outline-1 -outline-offset-1  focus:outline-2 focus:-outline-offset-2  sm:text-sm/6"
                                             />
                                         </div>
                                     </div>
@@ -154,7 +154,7 @@ export function Register() {
                                 <div>
                                     <label
                                         htmlFor="phone"
-                                        className="block mb-2 text-sm font-medium text-gray-900"
+                                        className="block mb-2 text-sm font-medium "
                                     >
                                         Phone Number
                                     </label>
@@ -165,7 +165,7 @@ export function Register() {
                                         name="phone"
                                         id=""
                                         placeholder="0823860543"
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                                        className=" text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 outline-1 block w-full p-2.5"
                                         required
                                     />
                                 </div>
@@ -173,7 +173,7 @@ export function Register() {
                                 <div>
                                     <label
                                         htmlFor="handle"
-                                        className="block mb-2 text-sm font-medium text-gray-900"
+                                        className="block mb-2 text-sm font-medium "
                                     >
                                         Username
                                     </label>
@@ -183,15 +183,15 @@ export function Register() {
                                         onChange={updateUser('username')}
                                         name="handle"
                                         id="handle"
-                                        placeholder="Example: jdoe"
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                                        placeholder="Example: vektora8"
+                                        className=" border   text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
                                         required
                                     />
                                 </div>
                                 <div>
                                     <label
                                         htmlFor="password"
-                                        className="block mb-2 text-sm font-medium text-gray-900"
+                                        className="block mb-2 text-sm font-medium "
                                     >
                                         Password
                                     </label>
@@ -202,7 +202,7 @@ export function Register() {
                                         name="password"
                                         id="password"
                                         placeholder="••••••••"
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                                        className=" text-sm rounded-lg focus:ring-primary-600 outline-1 focus:border-primary-600 block w-full p-2.5"
                                         required
                                     />
                                 </div>

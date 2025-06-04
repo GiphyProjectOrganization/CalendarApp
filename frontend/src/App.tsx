@@ -12,6 +12,7 @@ import { DayView } from './components/views/DayView';
 import { useAuth } from './hook/auth-hook';
 import { WEATHER_API_KEY, WEATHER_API_URL } from './constants';
 import { ProfileCard } from './components/profile/ProfileCard';
+import { Footer } from './components/layout/Footer';
 
 function App() {
   const { token, userId, logout, login } = useAuth();
@@ -51,7 +52,9 @@ function App() {
           <Route path="/events/create" element={<CreateEvent />} />
         </Routes>
       </BrowserRouter>
+      <Footer />
     </AuthContext.Provider>
+
   );
 }
 
