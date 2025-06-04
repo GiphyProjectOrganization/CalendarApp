@@ -35,9 +35,6 @@ function App() {
 
   return (
     <AuthContext.Provider value={{ isLoggedIn: !!token, userId, token, login, logout }}>
-      <div>
-        {token ? 'User is logged' : 'User is not logged'}
-      </div>
       <BrowserRouter>
         <Header />
         <Routes>
