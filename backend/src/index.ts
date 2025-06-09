@@ -5,10 +5,11 @@ import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { ObjectId, WithId, Document } from "mongodb";
+import { authMiddleware, AuthRequest } from "./middleware/auth"
 
 const app = express();
 const PORT = 5000;
-connectDB(); // connect to mongoDb
+
 
 app.use(cors());
 app.use(express.json());
@@ -302,5 +303,27 @@ app.get("/api/events", async (req, res) => {
   } catch (err) {
     console.error("Failed to fetch events:", err);
     res.status(500).json({ message: "Failed to fetch events" });
+  }
+});
+
+//
+app.get("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const usersCollection = db.collection<User>("users");
+
+    // req.userId is set by the auth middleware
+    const user = await usersCollection.findOne({ _id: new ObjectId(String(req.userId)) }, { projection: { password: 0 } });
+
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    res.status(200).json(user);
+  } catch (err) {
+    console.error("Failed to fetch user:", err);
+    res.status(500).json({ message: "Failed to fetch user" });
   }
 });
