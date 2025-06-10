@@ -11,8 +11,8 @@ export function Header() {
 
   return (
     <div className="navbar bg-base-100 shadow-md">
-      <Link to='/' className="font-cubao mr-1">TimeBuddy</Link>
       <div className="navbar-start">
+        <Link to='/' className="font-cubao mr-1">TimeBuddy</Link>
         <ThemeSwap />
       </div>
       <div className="navbar-center hidden lg:flex">

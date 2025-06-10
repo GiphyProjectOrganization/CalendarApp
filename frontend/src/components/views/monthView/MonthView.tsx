@@ -53,14 +53,14 @@ export const MonthView = () => {
     return day === 0 || day === 6;
   };
 
-  // useEffect(() => {
-  //   fetch('https://ipapi.co/json/')
-  //     .then(res => res.json())
-  //     .then(data => {
-  //       setCountryCode(data.country_code);
-  //     })
-  //     .catch(err => console.error('Geolocation failed:', err));
-  // }, []);
+  useEffect(() => {
+    fetch('https://ipapi.co/json/')
+      .then(res => res.json())
+      .then(data => {
+        setCountryCode(data.country_code);
+      })
+      .catch(err => console.error('Geolocation failed:', err));
+  }, []);
 
   const hd = useMemo(() => {
     if (!countryCode) return null;

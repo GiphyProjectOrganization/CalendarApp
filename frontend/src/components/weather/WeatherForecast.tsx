@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { WEATHER_API_KEY, WEATHER_API_URL} from "../../constants";
 
 interface Weather {
@@ -28,6 +29,8 @@ export function WeatherForecast() {
   const [countryCode, setCountryCode] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null)
   const [currentWeather, setCurrentWeather] = useState<any | null>(null);
+  
+  const navigate = useNavigate();
 
     useEffect(() => {
         fetch('https://ipapi.co/json/')
@@ -56,10 +59,16 @@ export function WeatherForecast() {
         }
     }, [lat, lon, unit]);
 
+    const handleDayClick = (dayTimestamp: number) => {
+      const date = new Date(dayTimestamp * 1000);
+      const dateString = date.toISOString().split('T')[0];
+      navigate(`/calendar/day?date=${dateString}`);
+    };
+
     const current = forecast[0];
     
     return (
-        <div className="dropdown dropdown-hover">
+    <div className="dropdown dropdown-hover">
       <div tabIndex={0} className="flex items-center gap-2 px-3 py-1 cursor-pointer hover:bg-base-200 rounded">
         {current && (
           <>
@@ -80,7 +89,11 @@ export function WeatherForecast() {
           const weekday = date.toLocaleDateString(undefined, { weekday: 'short' });
 
           return (
-            <li key={idx} className="flex justify-between items-center text-sm px-2 py-1">
+            <li 
+              key={idx} 
+              className="flex justify-between items-center text-sm px-2 py-1 cursor-pointer hover:bg-base-200 rounded transition-colors"
+              onClick={() => handleDayClick(day.dt)}
+            >
               <span>{weekday}</span>
               <div className="flex items-center gap-2">
                 <img

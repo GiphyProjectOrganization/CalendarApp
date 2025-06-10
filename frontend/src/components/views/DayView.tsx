@@ -1,6 +1,7 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { WeatherCard } from '../weather/WeateherCard';
+import { WEATHER_API_KEY, WEATHER_API_URL } from "../../constants";
 
 type ForecastDay = {
   dt: number;
@@ -8,14 +9,38 @@ type ForecastDay = {
   weather: any[]; 
 };
 
-interface DayViewProps {
-  forecast?: ForecastDay[];
-  unit: "metric" | "imperial";
-}
-
-export const DayView = ({ forecast = [], unit }: DayViewProps) => {
+export const DayView = () => {
   const [searchParams] = useSearchParams();
   const selectedDate = searchParams.get("date");
+  const [forecast, setForecast] = useState<ForecastDay[]>([]);
+  const [unit, setUnit] = useState<"metric" | "imperial">("metric");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchWeatherData = async () => {
+      try {
+        const locationRes = await fetch('https://ipapi.co/json/');
+        const locationData = await locationRes.json();
+        
+        const fahrenheitCountries = ['US', 'BS', 'BZ', 'KY', 'PW'];
+        const userUnit = fahrenheitCountries.includes(locationData.country_code) ? 'imperial' : 'metric';
+        setUnit(userUnit);
+
+        const weatherRes = await fetch(
+          `${WEATHER_API_URL}/onecall?lat=${locationData.latitude}&lon=${locationData.longitude}&exclude=minutely,hourly,alerts&units=${userUnit}&appid=${WEATHER_API_KEY}`
+        );
+        const weatherData = await weatherRes.json();
+        
+        setForecast(weatherData.daily.slice(0, 7));
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching weather data:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchWeatherData();
+  }, []);
 
   const parseUTCDate = (dateString: string) => {
     const [year, month, day] = dateString.split('-').map(Number);
@@ -43,6 +68,14 @@ export const DayView = ({ forecast = [], unit }: DayViewProps) => {
   });
 
   const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="loading loading-spinner loading-lg"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid md:grid-cols-4 gap-4 p-4">

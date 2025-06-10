@@ -16,23 +16,6 @@ import { Footer } from './components/layout/Footer';
 
 function App() {
   const { token, userId, logout, login } = useAuth();
-  const [forecast, setForecast] = useState([]);
-  const [unit, setUnit] = useState<'metric' | 'imperial'>('metric');
-
-  useEffect(() => {
-    fetch('https://ipapi.co/json/')
-      .then(res => res.json())
-      .then(data => {
-        const fahrenheitCountries = ['US', 'BS', 'BZ', 'KY', 'PW'];
-        setUnit(fahrenheitCountries.includes(data.country_code) ? 'imperial' : 'metric');
-        return { lat: data.latitude, lon: data.longitude };
-      })
-      .then(({ lat, lon }) => {
-        fetch(`${WEATHER_API_URL}/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts&units=${unit}&appid=${WEATHER_API_KEY}`)
-          .then(res => res.json())
-          .then(data => setForecast(data.daily || []));
-      });
-  }, [unit]);
 
   return (
     <AuthContext.Provider value={{ isLoggedIn: !!token, userId, token, login, logout }}>
@@ -44,7 +27,7 @@ function App() {
           <Route path='/login' element={<LoginPage />} />
           <Route path='/profileCard' element={<ProfileCard />} />
           <Route path="/calendar" element={<Outlet />}>
-            <Route path="day" element={<DayView forecast={forecast} unit={unit} />} />
+            <Route path="day" element={<DayView/>} />
             <Route path="week" element={<WeekView />} />
             <Route path="month" element={<MonthView />} />
             <Route index element={<MonthView />} />
