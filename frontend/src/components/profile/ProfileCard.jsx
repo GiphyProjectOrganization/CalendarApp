@@ -40,10 +40,10 @@ export function ProfileCard () {
     return (
         <div>
             <h1>Welcome, {user.username}</h1>
-            <p>firstName: {user.firstName}</p>
-            <p>lastName: {user.lastName}</p>
+            <p>First Name: {user.firstName}</p>
+            <p>Last Name: {user.lastName}</p>
             <p>Email: {user.email}</p>
-            <p>phone: {user.phoneNumber}</p>
+            <p>Phone: {user.phoneNumber}</p>
         </div>
     );
 }   

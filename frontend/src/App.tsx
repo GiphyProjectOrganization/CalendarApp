@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 import './App.css';
-import { Routes, Route, BrowserRouter, Outlet } from 'react-router-dom';
+import { Routes, Route, BrowserRouter, Outlet, Navigate } from 'react-router-dom';
 import { Register } from './pages/Auth/Register';
 import { MonthView } from './components/views/monthView/MonthView';
 import { WeekView } from './components/views/WeekView';
@@ -13,6 +13,16 @@ import { useAuth } from './hook/auth-hook';
 import { WEATHER_API_KEY, WEATHER_API_URL } from './constants';
 import { ProfileCard } from './components/profile/ProfileCard';
 import { Footer } from './components/layout/Footer';
+
+const ProtectedRoute = ({ children }) => {
+  const { isLoggedIn } = useContext(AuthContext);
+  
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return children;
+};
 
 function App() {
   const { token, userId, logout, login } = useAuth();
@@ -32,12 +42,18 @@ function App() {
             <Route path="month" element={<MonthView />} />
             <Route index element={<MonthView />} />
           </Route>
-          <Route path="/events/create" element={<CreateEvent />} />
+          <Route 
+            path="/events/create" 
+            element={
+              <ProtectedRoute>
+                <CreateEvent />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
       </BrowserRouter>
       <Footer />
     </AuthContext.Provider>
-
   );
 }
 

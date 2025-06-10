@@ -19,9 +19,12 @@ export function Header() {
         <WeatherForecast />
       </div>
       <div className="navbar-end">
-        <Link to="/events/create" className="btn btn-primary hover:bg-accent hover:text-accent-content btn-sm mr-1">
-          + New Event
-        </Link>
+        {isLoggedIn && (
+          <Link className="btn btn-primary hover:bg-accent hover:text-accent-content btn-sm mr-1" to="/events/create">
+              + New Event
+          </Link>
+        )}
+        
         <ViewSwitcher />
 
         {isLoggedIn && (

@@ -1,9 +1,20 @@
-import { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../../components/contexts/authContext/authContext';
 import { eventService, Event } from '../../services/eventService';
 
 const CreateEvent = () => {
   const navigate = useNavigate();
+  const auth = useContext(AuthContext);
+  
+  useEffect(() => {
+    if (!auth.isLoggedIn) {
+      alert('Please log in to create events');
+      navigate('/login');
+      return;
+    }
+  }, [auth.isLoggedIn, navigate]);
+
   const [event, setEvent] = useState<Event>({
     title: '',
     description: '',
@@ -15,7 +26,7 @@ const CreateEvent = () => {
     isPublic: false,
     isDraft: false,
     tags: [],
-    participants: [],
+    participants: [], 
     reminders: [],
     isRecurring: false,
   });
@@ -25,6 +36,35 @@ const CreateEvent = () => {
   const [newReminder, setNewReminder] = useState('');
   const [showRecurrenceOptions, setShowRecurrenceOptions] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>('');
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      if (auth.isLoggedIn && auth.userId && auth.token) {
+        try {
+          const response = await fetch(`http://localhost:5000/api/user/${auth.userId}`, {
+            headers: {
+              'Authorization': `Bearer ${auth.token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            setUserEmail(userData.email);
+            setEvent(prev => ({
+              ...prev,
+              participants: [userData.email]
+            }));
+          }
+        } catch (error) {
+          console.error('Failed to fetch user info:', error);
+        }
+      }
+    };
+
+    fetchUserInfo();
+  }, [auth.isLoggedIn, auth.userId, auth.token]);
 
   const updateEvent =
     (field: keyof Event) =>
@@ -72,20 +112,37 @@ const CreateEvent = () => {
     }));
   };
 
-  const addParticipant = () => {
-    if (
-      newParticipant.trim() &&
-      !event.participants.includes(newParticipant.trim())
-    ) {
-      setEvent((prev) => ({
-        ...prev,
-        participants: [...prev.participants, newParticipant.trim()],
-      }));
-      setNewParticipant('');
-    }
-  };
+const addParticipant = () => {
+  const email = newParticipant.trim();
+  
+  if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    alert('Please enter a valid email address');
+    return;
+  }
+  
+  if (email === userEmail) {
+    alert('You are already the creator of this event');
+    return;
+  }
+
+  if (event.participants.includes(email)) {
+    alert('This participant is already added');
+    return;
+  }
+
+  setEvent((prev) => ({
+    ...prev,
+    participants: [...prev.participants, email],
+  }));
+  setNewParticipant('');
+};
 
   const removeParticipant = (participantToRemove: string) => {
+    if (participantToRemove === userEmail) {
+      alert('You cannot remove yourself as the event creator');
+      return;
+    }
+    
     setEvent((prev) => ({
       ...prev,
       participants: prev.participants.filter((p) => p !== participantToRemove),
@@ -139,16 +196,25 @@ const CreateEvent = () => {
   };
 
   const handleSubmit = async (isDraft: boolean = false) => {
-    const validationError = validateEvent();
-    if (validationError && !isDraft) return;
+    if (!auth.isLoggedIn) {
+      alert('Please log in to create events');
+      navigate('/login');
+      return;
+    }
 
-    setIsSubmitting(true);
+    const validationError = validateEvent();
+    if (validationError && !isDraft) {
+      alert(validationError);
+      return;
+    }
 
     setIsSubmitting(true);
 
     const eventData = {
       ...event,
       isDraft,
+      createdBy: auth.userId, 
+      creatorEmail: userEmail, 
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -164,6 +230,23 @@ const CreateEvent = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (!auth.isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-primary mb-4">Authentication Required</h2>
+          <p className="text-base-content mb-4">Please log in to create events</p>
+          <button 
+            onClick={() => navigate('/login')} 
+            className="btn btn-primary"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 py-8">
@@ -403,11 +486,19 @@ const CreateEvent = () => {
                     key={participant}
                     className="flex items-center justify-between bg-base-200 p-2 rounded"
                   >
-                    <span>{participant}</span>
+                    <span>
+                      {participant}
+                      {participant === userEmail && (
+                        <span className="badge badge-accent ml-2 text-xs">Creator</span>
+                      )}
+                    </span>
                     <button
                       type="button"
                       onClick={() => removeParticipant(participant)}
-                      className="btn btn-sm btn-ghost text-error"
+                      className={`btn btn-sm btn-ghost text-error ${
+                        participant === userEmail ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                      disabled={participant === userEmail}
                     >
                       Remove
                     </button>
