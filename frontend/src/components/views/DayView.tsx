@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { WeatherCard } from '../weather/WeateherCard';
 import { WEATHER_API_KEY, WEATHER_API_URL } from "../../constants";
+import { UserLocation } from '../../hook/userLocation-hook';
 
 type ForecastDay = {
   dt: number;
@@ -16,21 +17,20 @@ export const DayView = () => {
   const [unit, setUnit] = useState<"metric" | "imperial">("metric");
   const [loading, setLoading] = useState(true);
 
+  const { location, isLoading, error } = UserLocation();
+
   useEffect(() => {
+    if (!location.lat || !location.lon || !location.countryCode) return;
+    const fahrenheitCountries = ['US', 'BS', 'BZ', 'KY', 'PW'];
+    const userUnit = fahrenheitCountries.includes(location.countryCode || '') ? 'imperial' : 'metric';
+    setUnit(userUnit);
+
     const fetchWeatherData = async () => {
       try {
-        const locationRes = await fetch('https://ipapi.co/json/');
-        const locationData = await locationRes.json();
-        
-        const fahrenheitCountries = ['US', 'BS', 'BZ', 'KY', 'PW'];
-        const userUnit = fahrenheitCountries.includes(locationData.country_code) ? 'imperial' : 'metric';
-        setUnit(userUnit);
-
         const weatherRes = await fetch(
-          `${WEATHER_API_URL}/onecall?lat=${locationData.latitude}&lon=${locationData.longitude}&exclude=minutely,hourly,alerts&units=${userUnit}&appid=${WEATHER_API_KEY}`
+          `${WEATHER_API_URL}/onecall?lat=${location.lat}&lon=${location.lon}&exclude=minutely,hourly,alerts&units=${userUnit}&appid=${WEATHER_API_KEY}`
         );
         const weatherData = await weatherRes.json();
-        
         setForecast(weatherData.daily.slice(0, 7));
         setLoading(false);
       } catch (error) {
@@ -38,9 +38,8 @@ export const DayView = () => {
         setLoading(false);
       }
     };
-
     fetchWeatherData();
-  }, []);
+  }, [location.lat, location.lon, location.countryCode]);
 
   const parseUTCDate = (dateString: string) => {
     const [year, month, day] = dateString.split('-').map(Number);
@@ -69,12 +68,15 @@ export const DayView = () => {
 
   const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
-  if (loading) {
+  if (isLoading || loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="loading loading-spinner loading-lg"></div>
       </div>
     );
+  }
+  if (error) {
+    return <div className="text-red-500 text-center mt-8">{error}</div>;
   }
 
   return (

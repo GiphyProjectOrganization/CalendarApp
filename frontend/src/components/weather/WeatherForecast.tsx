@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { WEATHER_API_KEY, WEATHER_API_URL} from "../../constants";
+import { UserLocation } from '../../hook/userLocation-hook';
 
 interface Weather {
   id: number;
@@ -22,52 +23,48 @@ interface DailyForecast {
 }
 
 export function WeatherForecast() {
-  const [lat, setLat] = useState<number | null>(null);
-  const [lon, setLon] = useState<number | null>(null);
   const [forecast, setForecast] = useState<DailyForecast[]>([]);
   const [unit, setUnit] = useState<"metric" | "imperial">("metric");
-  const [countryCode, setCountryCode] = useState<string | null>(null);
-  const [city, setCity] = useState<string | null>(null)
   const [currentWeather, setCurrentWeather] = useState<any | null>(null);
-  
+
+  const { location, isLoading, error } = UserLocation();
+
   const navigate = useNavigate();
 
-    useEffect(() => {
-        fetch('https://ipapi.co/json/')
-            .then(res => res.json())
-            .then(data => {
-            setLat(data.latitude);
-            setLon(data.longitude);
-            setCountryCode(data.country_code);
-            setCity(data.city)
+  useEffect(() => {
+    if (!location.lat || !location.lon || !location.countryCode) return;
+    const fahrenheitCountries = ['US', 'BS', 'BZ', 'KY', 'PW'];
+    const userUnit = fahrenheitCountries.includes(location.countryCode || '') ? 'imperial' : 'metric';
+    setUnit(userUnit);
+    fetch(`${WEATHER_API_URL}/onecall?lat=${location.lat}&lon=${location.lon}&exclude=minutely,hourly,alerts&units=${userUnit}&appid=${WEATHER_API_KEY}`)
+      .then(res => res.json())
+      .then(data => {
+        setForecast(data.daily.slice(0, 7));
+        setCurrentWeather(data.current);
+      })
+      .catch(err => console.error('Weather API error:', err));
+  }, [location.lat, location.lon, location.countryCode]);
 
-            const fahrenheitCountries = ['US', 'BS', 'BZ', 'KY', 'PW'];
-            setUnit(fahrenheitCountries.includes(data.country_code) ? 'imperial' : 'metric');
-            })
-            .catch(err => console.error('Geolocation failed:', err));
-    }, []);
+  const handleDayClick = (dayTimestamp: number) => {
+    const date = new Date(dayTimestamp * 1000);
+    const dateString = date.toISOString().split('T')[0];
+    navigate(`/calendar/day?date=${dateString}`);
+  };
 
-    useEffect(() => {
-        if (lat && lon) {
-        fetch(`${WEATHER_API_URL}/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts&units=${unit}&appid=${WEATHER_API_KEY}`)
-            .then(res => res.json())
-            .then(data => {
-            setForecast(data.daily.slice(0, 7));
-            setCurrentWeather(data.current);
-            })
-            .catch(err => console.error('Weather API error:', err));
-        }
-    }, [lat, lon, unit]);
-
-    const handleDayClick = (dayTimestamp: number) => {
-      const date = new Date(dayTimestamp * 1000);
-      const dateString = date.toISOString().split('T')[0];
-      navigate(`/calendar/day?date=${dateString}`);
-    };
-
-    const current = forecast[0];
-    
+  const current = forecast[0];
+  
+  if (isLoading) {
     return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="loading loading-spinner loading-lg"></div>
+      </div>
+    );
+  }
+  if (error) {
+    return <div className="text-error-content text-center mt-8">{error}</div>;
+  }
+
+  return (
     <div className="dropdown dropdown-hover">
       <div tabIndex={0} className="flex items-center gap-2 px-3 py-1 cursor-pointer hover:bg-base-200 rounded">
         {current && (
@@ -78,7 +75,7 @@ export function WeatherForecast() {
               className="w-6 h-6"
             />
             <span>{Math.round(current.temp.day)}°{unit === 'metric' ? 'C' : 'F'}</span>
-            {city && <span className="text-sm text-gray-500 ml-2">({city})</span>}
+            {location.city && <span className="text-sm text-gray-500 ml-2">({location.city})</span>}
           </>
         )}
       </div>

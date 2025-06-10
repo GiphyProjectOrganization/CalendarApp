@@ -5,6 +5,7 @@ import 'date-holidays';
 import 'date-holidays-parser';
 import { useNavigate } from 'react-router-dom';
 import Holidays from 'date-holidays';
+import { UserLocation } from '../../../hook/userLocation-hook';
 
 const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -14,6 +15,7 @@ export const MonthView = () => {
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [isHexTheme, setIsHexTheme] = useState(false);
   const [countryCode, setCountryCode] = useState<string | undefined>();
+  const { location, isLoading, error } = UserLocation();
   const navigate = useNavigate();
 
   const handleDateClick = (date: Date) => {
@@ -54,13 +56,10 @@ export const MonthView = () => {
   };
 
   useEffect(() => {
-    fetch('https://ipapi.co/json/')
-      .then(res => res.json())
-      .then(data => {
-        setCountryCode(data.country_code);
-      })
-      .catch(err => console.error('Geolocation failed:', err));
-  }, []);
+    if (location.countryCode) {
+      setCountryCode(location.countryCode);
+    }
+  }, [location.countryCode]);
 
   const hd = useMemo(() => {
     if (!countryCode) return null;
@@ -98,6 +97,18 @@ export const MonthView = () => {
     }
     return chunks;
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="loading loading-spinner loading-lg"></div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return <div className="text-error-content text-center mt-8">{error}</div>;
+  }
 
   return (
     <div className="max-w-5xl bg-white-100 mx-auto p-4">
