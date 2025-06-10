@@ -1,0 +1,7 @@
+.font-cubao {
+  font-family: 'MyCustomFont', sans-serif !important;
+  font-stretch: expanded;
+  font-size: 2rem;
+  color: var(--color-accent, #D9D98F); /* Accent color from theme, fallback to straw */
+  letter-spacing: 0.03em;
+}

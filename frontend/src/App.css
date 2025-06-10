@@ -1,4 +1,12 @@
 @import "tailwindcss";
+
+@font-face {
+  font-family: 'MyCustomFont';
+  src: url('/src/fonts/Cubao_Free_Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 @plugin "daisyui";
 @plugin "daisyui/theme" {
   name: "forest";

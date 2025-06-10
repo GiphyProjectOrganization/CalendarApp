@@ -4,12 +4,14 @@ import { Link } from "react-router-dom";
 import { ViewSwitcher } from "../views/ViewSwitcher";
 import { WeatherForecast } from "../weather/WeatherForecast";
 import { AuthContext } from "../contexts/authContext/authContext";
+import './Header.css';
 
 export function Header() {
   const { isLoggedIn, logout } = useContext(AuthContext);
 
   return (
     <div className="navbar bg-base-100 shadow-md">
+      <Link to='/' className="font-cubao mr-1">TimeBuddy</Link>
       <div className="navbar-start">
         <ThemeSwap />
       </div>
