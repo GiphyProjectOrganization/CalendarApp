@@ -13,14 +13,15 @@ import { useAuth } from './hook/auth-hook';
 import { WEATHER_API_KEY, WEATHER_API_URL } from './constants';
 import { ProfileCard } from './components/profile/ProfileCard';
 import { Footer } from './components/layout/Footer';
+import { EditProfile } from './components/profile/EditProfile';
 
 const ProtectedRoute = ({ children }) => {
   const { isLoggedIn } = useContext(AuthContext);
-  
+
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return children;
 };
 
@@ -34,21 +35,22 @@ function App() {
         <Routes>
           <Route path='/register' element={<Register />} />
           <Route path='/' element={<MonthView />} />
+          <Route path='/EditProfile' element={<EditProfile />} />
           <Route path='/login' element={<LoginPage />} />
           <Route path='/profileCard' element={<ProfileCard />} />
           <Route path="/calendar" element={<Outlet />}>
-            <Route path="day" element={<DayView/>} />
+            <Route path="day" element={<DayView />} />
             <Route path="week" element={<WeekView />} />
             <Route path="month" element={<MonthView />} />
             <Route index element={<MonthView />} />
           </Route>
-          <Route 
-            path="/events/create" 
+          <Route
+            path="/events/create"
             element={
               <ProtectedRoute>
                 <CreateEvent />
               </ProtectedRoute>
-            } 
+            }
           />
         </Routes>
       </BrowserRouter>

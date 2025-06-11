@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from 'react';
 import { useAuth } from '../../hook/auth-hook';
 import { ThemeContext } from '../contexts/theme/ThemeContext';
+import { Link } from 'react-router-dom';
 
 export function ProfileCard () {
     const [user, setUser] = useState(null);
@@ -80,14 +81,15 @@ export function ProfileCard () {
                     </div>
                 </div>
                 <div className="flex justify-end mt-6">
-                    <button
+                    <Link
                         className="px-5 py-2 rounded-lg outline-1 font-bold transition-transform duration-200 hover:scale-110"
                         type="button"
+                        to='/EditProfile'
                     >
                         Edit Profile
-                    </button>
+                    </Link>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
