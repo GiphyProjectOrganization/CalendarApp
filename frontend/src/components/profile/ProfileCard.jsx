@@ -10,11 +10,11 @@ export function ProfileCard () {
     const { token } = useAuth();
     const { theme } = useContext(ThemeContext);
 
-    // Pick color style based on theme
+
     let userPropStyle = { color: "#FF7800" }; // default for light (bright pink)
     if (theme === "ocean") userPropStyle = { color: '#068D9D' }; // bright blue
     else if (theme === "forest") userPropStyle = { color: "#9AB659" }; // bright green
-    // add more themes if needed
+
 
     useEffect(() => {
         if (token === null) return; // Still initializing
@@ -59,24 +59,24 @@ export function ProfileCard () {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                     </div>
-                    <h1 className="text-3xl font-extrabold mb-1 font-cubao mr-1">Welcome, {user.username}</h1>
-                    <span className="text-base font-cubao mr-1 ">Profile Overview:</span>
+                    <h1 className="font-cubao mr-1">Welcome, {user.username}</h1>
+                    <span className="font-cubao mr-1 ">Profile Overview:</span>
                 </div>
                 <div className="space-y-2 w-full">
                     <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold font-cubao mr-1">First Name:</span>
+                        <span className="font-cubao mr-1">First Name:</span>
                         <span className="font-cubao mr-1 break-all" style={userPropStyle}>{user.firstName}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold font-cubao mr-1">Last Name:</span>
+                        <span className="font-cubao mr-1">Last Name:</span>
                         <span className="font-cubao mr-1 break-all" style={userPropStyle}>{user.lastName}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold font-cubao mr-1">Email:</span>
+                        <span className="font-cubao mr-1">Email:</span>
                         <span className="font-cubao mr-1 break-all" style={userPropStyle}>{user.email}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold font-cubao mr-1">Phone:</span>
+                        <span className="font-cubao mr-1">Phone:</span>
                         <span className="font-cubao mr-1 break-all" style={userPropStyle}>{user.phoneNumber}</span>
                     </div>
                 </div>

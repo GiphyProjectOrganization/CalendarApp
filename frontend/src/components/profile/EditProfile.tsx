@@ -1,5 +1,14 @@
+import { useState } from "react"
+
 // phone, first name, last name 
 export function EditProfile() {
+    const [userInfo, setUserInfo] = useState({
+        phone: '',
+        firstName: '',
+        lastName: ''
+    })
+
+
     return (
         <div className="flex justify-center items-center min-h-[60vh]">
             <div className=" rounded-2xl shadow-xl border p-8 w-full max-w-md">
