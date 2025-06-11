@@ -47,7 +47,10 @@ export function ProfileCard () {
 
     return (
         <div className="flex justify-center items-center mt-10 min-h-[60vh]">
-            <div className="relative rounded-2xl shadow-2xl border p-10 w-full max-w-2xl transition-transform hover:scale-105">
+            <div
+                className="relative rounded-2xl shadow-2xl border p-10 w-full max-w-2xl transition-transform hover:scale-105 animate-fade-in"
+                style={{ animation: "fadeIn 0.7s" }}
+            >
                 <div className="flex flex-col items-center mb-6">
                     <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg mb-3 border-4">
                         <svg className="w-12 h-12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -75,6 +78,14 @@ export function ProfileCard () {
                         <span className="text-xs font-semibold font-cubao mr-1">Phone:</span>
                         <span className="font-cubao mr-1 break-all" style={userPropStyle}>{user.phoneNumber}</span>
                     </div>
+                </div>
+                <div className="flex justify-end mt-6">
+                    <button
+                        className="px-5 py-2 rounded-lg outline-1 font-bold transition-transform duration-200 hover:scale-110"
+                        type="button"
+                    >
+                        Edit Profile
+                    </button>
                 </div>
             </div>
         </div>
