@@ -1,7 +1,13 @@
-import { useState, ChangeEvent, useContext, useEffect } from 'react';
+import React, { useState, ChangeEvent, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../components/contexts/authContext/authContext';
 import { eventService, Event } from '../../services/eventService';
+import { UserLocation } from '../../hook/userLocation-hook';
+import PlacePicker from '../../components/map/PlacePicker';
+import { LoadScript } from '@react-google-maps/api';
+import { MAP_API_KEY } from '../../constants';
+
+const GOOGLE_MAP_LIBRARIES = ['places'];
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -37,6 +43,9 @@ const CreateEvent = () => {
   const [showRecurrenceOptions, setShowRecurrenceOptions] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userEmail, setUserEmail] = useState<string>('');
+  const [formattedAddress, setFormattedAddress] = useState<string>('');
+  const countries = [];
+  const { location, isLoading, error } = UserLocation();
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -62,7 +71,6 @@ const CreateEvent = () => {
         }
       }
     };
-
     fetchUserInfo();
   }, [auth.isLoggedIn, auth.userId, auth.token]);
 
@@ -247,6 +255,29 @@ const addParticipant = () => {
       </div>
     );
   }
+  
+  if (error) return (
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-error mb-4">Location Error</h2>
+        <p className="text-base-content mb-4">{error}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="btn btn-primary"
+        >
+          Retry
+        </button>
+        <div className="mt-4">
+          <button 
+            onClick={() => navigate('/calendar')} 
+            className="btn btn-ghost"
+          >
+            Go to Calendar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 py-8">
@@ -273,19 +304,37 @@ const addParticipant = () => {
                 <div className="text-xs text-base-content/60 mt-1">
                   {event.title.length}/30 characters
                 </div>
+                {isLoading && (
+                  <div className="flex items-center gap-2 mt-2 text-sm text-base-content/60">
+                    <span className="loading loading-spinner loading-xs text-primary" />
+                    Detecting your location...
+                  </div>
+                )}
+                {(!isLoading && location.lat === 0 && location.lon === 0) && (
+                  <div className="alert alert-warning my-2 text-sm">
+                    Location not available. Some features may be limited.
+                  </div>
+                )}
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-base-content mb-2">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  value={event.location}
-                  onChange={updateEvent('location')}
-                  placeholder="Enter event location"
-                  className="input input-bordered w-full"
-                />
+                <label className="block text-sm text-base-content font-medium mb-2">Event Location</label>
+                <LoadScript
+                  googleMapsApiKey={MAP_API_KEY}
+                  libraries={GOOGLE_MAP_LIBRARIES as any}
+                >
+                  <React.Suspense fallback={<span className="loading loading-spinner loading-xs text-primary" />}>
+                    <PlacePicker
+                      onPlaceSelected={(placeId: string, address: string) => {
+                        setFormattedAddress(address || '');
+                        setEvent((prev) => ({
+                          ...prev,
+                          location: placeId || '',
+                        }));
+                      }}
+                    />
+                  </React.Suspense>
+                </LoadScript>
+                <div className="text-xs text-base-content/60 mt-1">{formattedAddress}</div>
               </div>
             </div>
             <div>

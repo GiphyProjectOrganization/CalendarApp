@@ -1,5 +1,3 @@
-import React from "react";
-
 interface Weather {
   description: string;
   icon: string;
@@ -29,8 +27,10 @@ interface WeatherCardProps {
 export function WeatherCard({ day, unit }: WeatherCardProps) {
   if (!day) {
     return (
-      <div className="p-4 text-center text-error font-semibold">
-        Weather data not available for this day.
+      <div className="card bg-base-100 shadow-md p-4 w-full">
+        <div className="card-body text-base-content p-0">
+          Weather data not available for this day.
+        </div>
       </div>
     );
   }

@@ -98,18 +98,6 @@ export const MonthView = () => {
     return chunks;
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="loading loading-spinner loading-lg"></div>
-      </div>
-    );
-  }
-  
-  if (error) {
-    return <div className="text-error-content text-center mt-8">{error}</div>;
-  }
-
   return (
     <div className="max-w-5xl bg-white-100 mx-auto p-4">
       <div className="flex items-center justify-between mb-4">
@@ -125,6 +113,12 @@ export const MonthView = () => {
           <div key={day} className="py-2">{day}</div>
         ))}
       </div>
+
+      {error && (
+        <div className="text-error-content text-center my-2 text-sm">
+          Could not load holidays for your country. Calendar is still available.
+        </div>
+      )}
 
       {isHexTheme ? (
         <div className="honeycomb">
@@ -147,7 +141,7 @@ export const MonthView = () => {
       ) : (
         <div className="grid grid-cols-7 text-base-content relative z-10">
           {dates.map((date, idx) => {
-            const holidayNames = isHoliday(date);
+            const holidayNames = hd ? isHoliday(date) : [];
 
             const cellClasses = [
               'relative border rounded-sm p-2 h-24 text-sm transition-transform hover:scale-105 hover:shadow-lg hover:z-10 cursor-pointer',

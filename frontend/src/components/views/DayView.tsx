@@ -68,17 +68,6 @@ export const DayView = () => {
 
   const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
-  if (isLoading || loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="loading loading-spinner loading-lg"></div>
-      </div>
-    );
-  }
-  if (error) {
-    return <div className="text-red-500 text-center mt-8">{error}</div>;
-  }
-
   return (
     <div className="grid md:grid-cols-4 gap-4 p-4">
       <div className="md:col-span-3">
@@ -116,6 +105,26 @@ export const DayView = () => {
 
       <div className="md:col-span-1">
         {dayForecast && <WeatherCard day={dayForecast} unit={unit} />}
+        {!dayForecast && error && (
+          <div className="alert alert-error shadow-md w-full">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="stroke-current shrink-0 h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 9v2m0 4h.01M5.93 19h12.14c1.12 0 1.87-1.13 1.34-2.15L13.34 4.5a1.5 1.5 0 0 0-2.68 0L4.59 16.85c-.53 1.02.22 2.15 1.34 2.15z"
+              />
+            </svg>
+            <span className="font-bold text-error-content">
+              Weather data not currently available for this day.
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
