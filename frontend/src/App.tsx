@@ -35,9 +35,9 @@ function App() {
         <Routes>
           <Route path='/register' element={<Register />} />
           <Route path='/' element={<MonthView />} />
-          <Route path='/EditProfile' element={<EditProfile />} />
+          <Route path='/EditProfile' element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
           <Route path='/login' element={<LoginPage />} />
-          <Route path='/profileCard' element={<ProfileCard />} />
+          <Route path='/profileCard' element={<ProtectedRoute><ProfileCard /></ProtectedRoute>} />
           <Route path="/calendar" element={<Outlet />}>
             <Route path="day" element={<DayView />} />
             <Route path="week" element={<WeekView />} />

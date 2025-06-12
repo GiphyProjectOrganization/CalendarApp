@@ -65,12 +65,12 @@ export default function LoginPage() {
             <div className="flex min-h-full flex-1 flex-col justify-center  from-primary/10 via-secondary/10 to-accent/10 px-6 py-12 lg:px-8">
                 <div className="bg-base-100 max-w-lg w-full mx-auto rounded-2xl shadow-xl border border-primary/20 p-6">
                     <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-                        <h2 className="text-3xl font-bold text-primary leading-tight tracking-tight  md:text-4xl text-center ">
+                        <h2 className="font-cubao mr-1 text-center">
                             Sign in to your account
                         </h2>
                     </div>
 
-                    <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+                    <div className="mt-2 sm:mx-auto sm:w-full sm:max-w-sm">
                         <form className="space-y-6" onSubmit={logIn}>
                             <div>
                                 <label htmlFor="email" className="block text-sm/6 font-medium ">

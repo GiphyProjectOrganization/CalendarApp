@@ -90,7 +90,7 @@ export function Register() {
                 <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-4 lg:px-8">
                     <div className="bg-base-100 sm:mx-auto sm:w-full sm:max-w-xl">
                         <div className="w-full p-10 space-y-4 md:space-y-6 sm:p-10  rounded-2xl shadow-2xl border-2">
-                            <h1 className="text-3xl font-bold text-primary leading-tight tracking-tight  md:text-4xl text-center">
+                            <h1 className="font-cubao mr-1 text-center">
                                 Create Your TimeBuddy Account
                             </h1>
                             <form className="space-y-4 md:space-y-6" >
