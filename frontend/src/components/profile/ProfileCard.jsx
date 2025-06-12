@@ -53,11 +53,19 @@ export function ProfileCard () {
                 style={{ animation: "fadeIn 0.7s" }}
             >
                 <div className="flex flex-col items-center mb-6">
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg mb-3 border-4">
-                        <svg className="w-12 h-12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A9 9 0 1112 21a9 9 0 01-6.879-3.196z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg mb-3 border-4 overflow-hidden bg-white">
+                        {user.photoBase64 ? (
+                            <img
+                                src={user.photoBase64}
+                                alt="Profile"
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <svg className="w-12 h-12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A9 9 0 1112 21a9 9 0 01-6.879-3.196z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        )}
                     </div>
                     <h1 className="font-cubao mr-1">Welcome, {user.username}</h1>
                     <span className="font-cubao mr-1 ">Profile Overview:</span>

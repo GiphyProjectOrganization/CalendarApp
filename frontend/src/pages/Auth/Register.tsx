@@ -10,6 +10,7 @@ interface UserRegister {
     password: string;
     email: string;
     phoneNumber: string;
+    photoBase64?: string;
 }
 
 export function Register() {
@@ -22,8 +23,38 @@ export function Register() {
         lastName: '',
         password: '',
         email: '',
-        phoneNumber: ''
+        phoneNumber: '',
+        photoBase64: ''
     });
+
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const updateUser = (prop: keyof UserRegister) => async (e: ChangeEvent<HTMLInputElement>) => {
+        if (prop === "photoBase64" && e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            if (file.size > 1024 * 1024) {
+                alert("Image must be under 1MB.");
+                return;
+            }
+            const base64 = await fileToBase64(file);
+            setUser((prev) => ({
+                ...prev,
+                photoBase64: base64
+            }));
+        } else {
+            setUser((prev) => ({
+                ...prev,
+                [prop]: e.target.value
+            }));
+        }
+    };
 
     const register = async (e: FormEvent<HTMLButtonElement>) => {
         e.preventDefault();
@@ -75,14 +106,6 @@ export function Register() {
             alert("Something went wrong.");
         }
     }
-
-    const updateUser = (prop: keyof UserRegister) => (e: ChangeEvent<HTMLInputElement>) => {
-        setUser((prev) => ({
-            ...prev,
-            [prop]: e.target.value
-        }));
-    };
-
 
     return (
         <>
@@ -207,43 +230,42 @@ export function Register() {
                                     />
                                 </div>
 
-                                {/* <div className="col-span-full">
-                                    <label htmlFor="cover-photo" className="block text-base font-semibold text-emerald-700 mb-2">
+                                <div>
+                                    <label
+                                        htmlFor="photo"
+                                        className="block mb-2 text-sm font-medium "
+                                    >
                                         Profile Photo
                                     </label>
-                                    <div className="mt-2 flex justify-center rounded-lg border-2 border-dashed border-emerald-400 bg-emerald-50 px-6 py-10">
-                                        <div className="text-center">
-                                            <PhotoIcon aria-hidden="true" className="mx-auto size-16 text-emerald-300" />
-                                            <div className="mt-4 flex text-base text-emerald-700">
-                                                <label
-                                                    htmlFor="file-upload"
-                                                    className="relative cursor-pointer rounded-md bg-white font-semibold text-emerald-700 focus-within:ring-2 focus-within:ring-emerald-600 focus-within:ring-offset-2 focus-within:outline-hidden hover:text-emerald-500"
-                                                >
-                                                    <span>Upload a file</span>
-                                                    <input
-                                                        id="file-upload"
-                                                        onChange={updateUser('photo')}
-                                                        name="file-upload"
-                                                        type="file"
-                                                        accept="image/*"
-                                                        className="sr-only"
-                                                    />
-                                                </label>
-                                                <p className="pl-1">or drag and drop</p>
-                                            </div>
-                                            <p className="text-xs text-emerald-600">PNG, JPG, GIF up to 1MB</p>
-                                        </div>
+                                    <div className="flex flex-col items-center">
+                                        <label
+                                            htmlFor="photo"
+                                            className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-400 rounded-full cursor-pointer bg-gray-50 hover:bg-gray-100 transition"
+                                        >
+                                            {user.photoBase64 ? (
+                                                <img
+                                                    src={user.photoBase64}
+                                                    alt="Preview"
+                                                    className="h-28 w-28 rounded-full object-cover border-2 shadow"
+                                                />
+                                            ) : (
+                                                <span className="text-gray-400 text-sm text-center">
+                                                    Click to upload
+                                                    <p>(under 1 mb)</p>
+                                                </span>
+
+                                            )}
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={updateUser('photoBase64')}
+                                                name="photo"
+                                                id="photo"
+                                                className="hidden"
+                                            />
+                                        </label>
                                     </div>
-                                </div> */}
-                                {/* {user.photoBase64 && (
-                                    <div className="mt-4 flex justify-center">
-                                        <img
-                                            src={user.photoBase64}
-                                            alt="Preview"
-                                            className="h-28 w-28 rounded-full object-cover border-4 border-emerald-300 shadow-lg"
-                                        />
-                                    </div>
-                                )} */}
+                                </div>
 
                                 <button
                                     type="submit"

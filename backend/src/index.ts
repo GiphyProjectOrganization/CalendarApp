@@ -10,9 +10,8 @@ import { authMiddleware, AuthRequest } from "./middleware/auth"
 const app = express();
 const PORT = 5000;
 
-
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 app.get("/api/hello", async (_req, res) => {
   res.json({ message: "Hello from TypeScript Express backend!" });
@@ -31,6 +30,7 @@ interface RegisterRequestBody {
   password: string;
   phoneNumber: string;
   email: string;
+  photoBase64?: string;
 }
 
 interface User {
@@ -42,10 +42,11 @@ interface User {
   lastName: string;
   phoneNumber: string;
   password: string;
+  photoBase64?: string;
 }
 
 app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res: Response): Promise<void> => {
-  const { username, firstName, lastName, password, phoneNumber, email } = req.body;
+  const { username, firstName, lastName, password, phoneNumber, email, photoBase64 } = req.body;
 
   if (
     !email?.trim() ||
@@ -109,7 +110,8 @@ app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res:
       firstName,
       lastName,
       phoneNumber,
-      password: hashedPassword
+      password: hashedPassword,
+      photoBase64
     };
 
     await usersCollection.insertOne(newUser);
@@ -135,7 +137,8 @@ app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res:
         email: newUser.email,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
-        phoneNumber: newUser.phoneNumber
+        phoneNumber: newUser.phoneNumber,
+        photoBase64: newUser.photoBase64
       }
     });
     return;
@@ -314,7 +317,10 @@ app.get("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response) 
     const usersCollection = db.collection<User>("users");
 
     // req.userId is set by the auth middleware
-    const user = await usersCollection.findOne({ _id: new ObjectId(String(req.userId)) }, { projection: { password: 0 } });
+    const user = await usersCollection.findOne(
+      { _id: new ObjectId(String(req.userId)) },
+      { projection: { password: 0 } }
+    );
 
     if (!user) {
       res.status(404).json({ message: "User not found" });
