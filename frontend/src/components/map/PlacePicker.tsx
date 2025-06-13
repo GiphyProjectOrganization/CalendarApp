@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 
-function PlacePicker({ onPlaceSelected }: { onPlaceSelected: (placeId: string, address: string) => void }) {
+function PlacePicker({ onPlaceSelected, lat = 0, lon = 0 }: { onPlaceSelected: (placeId: string, address: string) => void, lat?: number, lon?: number }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
@@ -20,8 +20,15 @@ function PlacePicker({ onPlaceSelected }: { onPlaceSelected: (placeId: string, a
   useEffect(() => {
     if (!inputRef.current || !window.google) return;
 
-    const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
+    const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
       fields: ['place_id', 'formatted_address'],
+      bounds: (lat !== 0 || lon !== 0)
+        ? new window.google.maps.LatLngBounds(
+            new window.google.maps.LatLng(lat - 0.1, lon - 0.1),
+            new window.google.maps.LatLng(lat + 0.1, lon + 0.1)
+          )
+        : undefined,
+      strictBounds: (lat !== 0 || lon !== 0)
     });
 
     autocomplete.addListener('place_changed', () => {
@@ -34,9 +41,9 @@ function PlacePicker({ onPlaceSelected }: { onPlaceSelected: (placeId: string, a
     });
 
     autocompleteRef.current = autocomplete;
-  }, []);
+  }, [lat, lon]);
 
-  return <input ref={inputRef} placeholder="Enter a place" className="input bg-white input-bordered w-full" />;
+  return <input ref={inputRef} placeholder="Enter a place or address" className="input bg-white input-bordered w-full" autoComplete="off" />;
 }
 
 export default PlacePicker;

@@ -4,7 +4,6 @@ import { AuthContext } from '../../components/contexts/authContext/authContext';
 import { eventService, Event } from '../../services/eventService';
 import { UserLocation } from '../../hook/userLocation-hook';
 import PlacePicker from '../../components/map/PlacePicker';
-import { LoadScript } from '@react-google-maps/api';
 import { MAP_API_KEY } from '../../constants';
 
 const GOOGLE_MAP_LIBRARIES = ['places'];
@@ -49,15 +48,14 @@ const CreateEvent = () => {
 
   useEffect(() => {
     const fetchUserInfo = async () => {
-      if (auth.isLoggedIn && auth.userId && auth.token) {
+      if (auth.isLoggedIn && auth.token) {
         try {
-          const response = await fetch(`http://localhost:5000/api/user/${auth.userId}`, {
+          const response = await fetch(`http://localhost:5000/api/user/me`, {
             headers: {
               'Authorization': `Bearer ${auth.token}`,
               'Content-Type': 'application/json'
             }
           });
-          
           if (response.ok) {
             const userData = await response.json();
             setUserEmail(userData.email);
@@ -72,7 +70,7 @@ const CreateEvent = () => {
       }
     };
     fetchUserInfo();
-  }, [auth.isLoggedIn, auth.userId, auth.token]);
+  }, [auth.isLoggedIn, auth.token]);
 
   const updateEvent =
     (field: keyof Event) =>
@@ -318,22 +316,17 @@ const addParticipant = () => {
               </div>
               <div>
                 <label className="block text-sm text-base-content font-medium mb-2">Event Location</label>
-                <LoadScript
-                  googleMapsApiKey={MAP_API_KEY}
-                  libraries={GOOGLE_MAP_LIBRARIES as any}
-                >
-                  <React.Suspense fallback={<span className="loading loading-spinner loading-xs text-primary" />}>
-                    <PlacePicker
-                      onPlaceSelected={(placeId: string, address: string) => {
-                        setFormattedAddress(address || '');
-                        setEvent((prev) => ({
-                          ...prev,
-                          location: placeId || '',
-                        }));
-                      }}
-                    />
-                  </React.Suspense>
-                </LoadScript>
+                <PlacePicker
+                  onPlaceSelected={(placeId: string, address: string) => {
+                    setFormattedAddress(address || '');
+                    setEvent((prev) => ({
+                      ...prev,
+                      location: placeId || '',
+                    }));
+                  }}
+                  lat={location.lat}
+                  lon={location.lon}
+                />
                 <div className="text-xs text-base-content/60 mt-1">{formattedAddress}</div>
               </div>
             </div>
