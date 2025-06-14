@@ -254,29 +254,6 @@ const addParticipant = () => {
     );
   }
   
-  if (error) return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 flex items-center justify-center">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-error mb-4">Location Error</h2>
-        <p className="text-base-content mb-4">{error}</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="btn btn-primary"
-        >
-          Retry
-        </button>
-        <div className="mt-4">
-          <button 
-            onClick={() => navigate('/calendar')} 
-            className="btn btn-ghost"
-          >
-            Go to Calendar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 py-8">
       <div className="max-w-4xl mx-auto px-6">
@@ -613,6 +590,11 @@ const addParticipant = () => {
                 Cancel
               </button>
             </div>
+            {error && (
+              <div className="alert alert-warning my-2 text-sm">
+                {error}
+              </div>
+            )}
           </form>
         </div>
       </div>
