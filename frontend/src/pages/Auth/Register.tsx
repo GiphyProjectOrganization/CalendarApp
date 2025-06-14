@@ -240,7 +240,7 @@ export function Register() {
                                     <div className="flex flex-col items-center">
                                         <label
                                             htmlFor="photo"
-                                            className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-400 rounded-full cursor-pointer bg-gray-50 hover:bg-gray-100 transition"
+                                            className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed rounded-full cursor-pointer transition"
                                         >
                                             {user.photoBase64 ? (
                                                 <img

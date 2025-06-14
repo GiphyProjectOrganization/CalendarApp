@@ -130,16 +130,7 @@ app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res:
     );
 
     res.status(201).json({
-      token,
-      userId: insertedUser._id,
-      user: {
-        username: newUser.username,
-        email: newUser.email,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        phoneNumber: newUser.phoneNumber,
-        photoBase64: newUser.photoBase64
-      }
+      token
     });
     return;
   } catch (err) {
@@ -190,15 +181,7 @@ app.post("/api/login", async (req: Request, res: Response): Promise<void> => {
     );
 
     res.status(201).json({
-      token,
-      userId: existingUser._id,
-      user: {
-        username: existingUser.username,
-        email: existingUser.email,
-        firstName: existingUser.firstName,
-        lastName: existingUser.lastName,
-        phoneNumber: existingUser.phoneNumber
-      }
+      token
     });
   } catch (err) {
     console.error(err);
@@ -309,7 +292,7 @@ app.get("/api/events", async (req, res) => {
   }
 });
 
-//
+// get User by Id
 app.get("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const client = await connectDB();
@@ -331,5 +314,54 @@ app.get("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response) 
   } catch (err) {
     console.error("Failed to fetch user:", err);
     res.status(500).json({ message: "Failed to fetch user" });
+  }
+});
+
+app.patch("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const usersCollection = db.collection<User>("users");
+
+    const userId = req.userId;
+    if (!userId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const { firstName, lastName, phoneNumber, photoBase64 } = req.body;
+    const updateFields: Partial<User> = {};
+
+    if (typeof firstName === "string" && firstName.trim()) updateFields.firstName = firstName.trim();
+    if (typeof lastName === "string" && lastName.trim()) updateFields.lastName = lastName.trim();
+    if (typeof phoneNumber === "string" && phoneNumber.trim()) updateFields.phoneNumber = phoneNumber.trim();
+    if (typeof photoBase64 === "string" && photoBase64.trim()) updateFields.photoBase64 = photoBase64.trim();
+
+    if (Object.keys(updateFields).length === 0) {
+      res.status(400).json({ message: "No valid fields to update." });
+      return;
+    }
+
+    const result = await usersCollection.updateOne(
+      { _id: new ObjectId(String(userId)) },
+      { $set: updateFields }
+    );
+
+    if (result.matchedCount === 0) {
+      res.status(404).json({ message: "User not found." });
+      return;
+    }
+
+    const updatedUser = await usersCollection.findOne(
+      { _id: new ObjectId(String(userId)) },
+      { projection: { password: 0 } }
+    );
+
+    res.status(200).json(updatedUser);
+    return;
+  } catch (err) {
+    console.error("Failed to update user:", err);
+    res.status(500).json({ message: "Failed to update user" });
+    return;
   }
 });

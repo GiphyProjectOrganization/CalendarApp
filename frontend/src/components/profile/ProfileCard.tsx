@@ -3,21 +3,28 @@ import { useAuth } from '../../hook/auth-hook';
 import { ThemeContext } from '../contexts/theme/ThemeContext';
 import { Link } from 'react-router-dom';
 
-export function ProfileCard () {
-    const [user, setUser] = useState(null);
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(true);
+interface User {
+    photoBase64?: string;
+    username: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+}
+
+export function ProfileCard() {
+    const [user, setUser] = useState<User | null>(null);
+    const [error, setError] = useState<string>('');
+    const [loading, setLoading] = useState<boolean>(true);
     const { token } = useAuth();
     const { theme } = useContext(ThemeContext);
 
-
-    let userPropStyle = { color: "#FF7800" }; // default for light (bright pink)
-    if (theme === "ocean") userPropStyle = { color: '#068D9D' }; // bright blue
-    else if (theme === "forest") userPropStyle = { color: "#9AB659" }; // bright green
-
+    let userPropStyle: React.CSSProperties = { color: "#FF7800" };
+    if (theme === "ocean") userPropStyle = { color: '#068D9D' };
+    else if (theme === "forest") userPropStyle = { color: "#9AB659" };
 
     useEffect(() => {
-        if (token === null) return; // Still initializing
+        if (token === null) return;
 
         const fetchUser = async () => {
             if (!token) {
@@ -30,10 +37,11 @@ export function ProfileCard () {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 if (!res.ok) throw new Error('Unauthorized');
-                const data = await res.json();
+                const data: User = await res.json();
                 setUser(data);
             } catch (err) {
-                setError(err.message || 'Unauthorized');
+                if (err instanceof Error) setError(err.message);
+                else setError('Unauthorized');
             } finally {
                 setLoading(false);
             }
