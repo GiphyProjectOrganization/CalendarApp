@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import { client, connectDB } from "./db";
 import bcrypt from "bcrypt";
-import { Request, Response } from "express";
+import { Request, Response, RequestHandler, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { ObjectId, WithId, Document } from "mongodb";
 import { authMiddleware, AuthRequest } from "./middleware/auth"
@@ -33,7 +33,7 @@ interface RegisterRequestBody {
   photoBase64?: string;
 }
 
-interface User {
+export interface User {
   _id?: ObjectId;
   username: string;
   email: string;
@@ -231,6 +231,9 @@ app.post("/api/events", async (req, res) => {
 
   const startDateTime = new Date(`${startDate}T${startTime}`);
   const endDateTime = new Date(`${endDate}T${endTime}`);
+  const locationData = typeof location === 'string' 
+    ? { placeId: '', address: location }
+    : location;
 
   if (endDateTime <= startDateTime) {
     res.status(400).json({ message: "End time must be after start time" });
@@ -249,7 +252,7 @@ app.post("/api/events", async (req, res) => {
       startTime,
       endDate,
       endTime,
-      location: location?.trim() || '',
+      location: locationData,
       isPublic: Boolean(isPublic),
       isDraft: Boolean(isDraft),
       tags: Array.isArray(tags) ? tags : [],
@@ -284,13 +287,58 @@ app.get("/api/events", async (req, res) => {
 
     const events = await eventsCollection.find({ isDraft: false }).toArray();
 
-    res.status(200).json(events);
+    const formattedEvents = events.map(({ _id, ...rest }) => ({
+      id: _id.toString(),
+      ...rest,
+    }));
+
+    res.status(200).json(formattedEvents);
 
   } catch (err) {
     console.error("Failed to fetch events:", err);
     res.status(500).json({ message: "Failed to fetch events" });
   }
 });
+
+app.get("/api/participating", authMiddleware, (async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const authReq = req as AuthRequest;
+      if (!authReq.userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const client = await connectDB();
+      const db = client.db("calendar");
+      const eventsCollection = db.collection("events");
+      const usersCollection = db.collection<User>("users");
+
+      const currentUser = await usersCollection.findOne(
+        { _id: new ObjectId(authReq.userId) },
+        { projection: { email: 1 } }
+      );
+
+      if (!currentUser?.email) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const events = await eventsCollection
+        .find({ 
+          participants: currentUser.email,
+          isDraft: false 
+        })
+        .toArray();
+
+      return res.status(200).json(
+        events.map(({ _id, ...rest }) => ({
+          id: _id.toString(),
+          ...rest,
+        }))
+      );
+    } catch (err) {
+      return next(err);
+    }
+  }) as RequestHandler
+);
 
 // get User by Id
 app.get("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -364,4 +412,50 @@ app.patch("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response
     res.status(500).json({ message: "Failed to update user" });
     return;
   }
+}),
+
+app.get("/api/users/lookup", authMiddleware, (async (req, res, next) => {
+  try {
+      const authReq = req as AuthRequest;
+      const { query } = req.query;
+
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ message: "Query parameter is required" });
+      }
+
+      const client = await connectDB();
+      const db = client.db("calendar");
+      const usersCollection = db.collection<User>("users");
+
+      const users = await usersCollection.find({
+        $or: [
+          { email: { $regex: query, $options: 'i' } },
+          { username: { $regex: query, $options: 'i' } }
+        ]
+      }, {
+        projection: {
+          _id: 1,
+          email: 1,
+          username: 1,
+          firstName: 1,
+          lastName: 1
+        }
+      }).limit(10).toArray();
+
+      return res.status(200).json(
+        users.map(user => ({
+          id: user._id?.toString(),
+          email: user.email,
+          username: user.username,
+          name: `${user.firstName} ${user.lastName}`
+        }))
+      );
+    } catch (err) {
+      return next(err);
+    }
+  }) as RequestHandler
+);
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

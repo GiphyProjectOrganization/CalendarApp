@@ -21,13 +21,18 @@ const CreateEvent = () => {
   }, [auth.isLoggedIn, navigate]);
 
   const [event, setEvent] = useState<Event>({
+    id: '',
     title: '',
     description: '',
     startDate: '',
     startTime: '',
     endDate: '',
     endTime: '',
-    location: '',
+    location: {
+      placeId: '',
+      address: '',
+      coordinates: undefined
+    },
     isPublic: false,
     isDraft: false,
     tags: [],
@@ -45,6 +50,13 @@ const CreateEvent = () => {
   const [formattedAddress, setFormattedAddress] = useState<string>('');
   const countries = [];
   const { location, isLoading, error } = UserLocation();
+  const [participantQuery, setParticipantQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Array<{
+    id: string;
+    email: string;
+    username: string;
+    name: string;
+  }>>([]);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -118,30 +130,44 @@ const CreateEvent = () => {
     }));
   };
 
-const addParticipant = () => {
-  const email = newParticipant.trim();
-  
-  if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-    alert('Please enter a valid email address');
-    return;
-  }
-  
-  if (email === userEmail) {
-    alert('You are already the creator of this event');
-    return;
-  }
+  const handleSearchUsers = async () => {
+    if (!participantQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
 
-  if (event.participants.includes(email)) {
-    alert('This participant is already added');
-    return;
-  }
+    try {
+      const results = await eventService.searchUsers(participantQuery);
+      setSearchResults(results);
+    } catch (err) {
+      console.error('Failed to search users:', err);
+      alert('Failed to search users. Please try again.');
+    }
+  };
 
-  setEvent((prev) => ({
-    ...prev,
-    participants: [...prev.participants, email],
-  }));
-  setNewParticipant('');
-};
+  const addParticipant = (user: { id: string; email: string }) => {
+     if (!user.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    if (user.email === userEmail) {
+      alert('You are already the creator of this event');
+      return;
+    }
+
+    if (event.participants.includes(user.email)) {
+      alert('This participant is already added');
+      return;
+    }
+
+    setEvent((prev) => ({
+      ...prev,
+      participants: [...prev.participants, user.email],
+    }));
+    setParticipantQuery('');
+    setSearchResults([]);
+  };
 
   const removeParticipant = (participantToRemove: string) => {
     if (participantToRemove === userEmail) {
@@ -291,22 +317,25 @@ const addParticipant = () => {
                   </div>
                 )}
               </div>
+
               <div>
                 <label className="block text-sm text-base-content font-medium mb-2">Event Location</label>
                 <PlacePicker
-                  onPlaceSelected={(placeId: string, address: string) => {
-                    setFormattedAddress(address || '');
-                    setEvent((prev) => ({
+                  onPlaceSelected={(placeData) => {
+                    setEvent(prev => ({
                       ...prev,
-                      location: placeId || '',
+                      location: placeData
                     }));
                   }}
                   lat={location.lat}
                   lon={location.lon}
                 />
-                <div className="text-xs text-base-content/60 mt-1">{formattedAddress}</div>
+                <div className="text-xs text-base-content/60 mt-1">
+                  {typeof event.location === 'object' ? event.location.address : ''}
+                </div>
               </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-base-content mb-2">
                 Description
@@ -322,6 +351,7 @@ const addParticipant = () => {
                 {event.description.length}/500 characters
               </div>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-base-content mb-2">
@@ -334,6 +364,7 @@ const addParticipant = () => {
                   className="input input-bordered w-full"
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-base-content mb-2">
                   Start Time *
@@ -345,6 +376,7 @@ const addParticipant = () => {
                   className="input input-bordered w-full"
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-base-content mb-2">
                   End Date *
@@ -356,6 +388,7 @@ const addParticipant = () => {
                   className="input input-bordered w-full"
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-base-content mb-2">
                   End Time *
@@ -368,6 +401,7 @@ const addParticipant = () => {
                 />
               </div>
             </div>
+
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
@@ -392,6 +426,7 @@ const addParticipant = () => {
                 <span className="text-sm font-medium">Recurring Event</span>
               </label>
             </div>
+
             {showRecurrenceOptions && (
               <div className="bg-base-200 p-4 rounded-lg space-y-4">
                 <h3 className="font-semibold text-base-content">
@@ -441,6 +476,7 @@ const addParticipant = () => {
                 </div>
               </div>
             )}
+
             <div>
               <label className="block text-sm font-medium text-base-content mb-2">
                 Tags/Categories
@@ -481,43 +517,61 @@ const addParticipant = () => {
                 Participants
               </label>
               <div className="flex gap-2 mb-2">
-                <input
-                  type="email"
-                  value={newParticipant}
-                  onChange={(e) => setNewParticipant(e.target.value)}
-                  placeholder="Enter email address"
-                  className="input input-bordered flex-1"
-                  onKeyPress={(e) =>
-                    e.key === 'Enter' && (e.preventDefault(), addParticipant())
-                  }
-                />
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={participantQuery}
+                    onChange={(e) => {
+                      setParticipantQuery(e.target.value);
+                      handleSearchUsers();
+                    }}
+                    placeholder="Search by email or username"
+                    className="input input-bordered w-full"
+                  />
+                  {searchResults.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-full bg-base-100 shadow-lg rounded-md max-h-60 overflow-auto">
+                      {searchResults.map((user) => (
+                        <div
+                          key={user.id}
+                          className="p-2 hover:bg-base-200 cursor-pointer"
+                          onClick={() => addParticipant(user)}
+                        >
+                          <div className="font-medium">{user.name}</div>
+                          <div className="text-sm text-base-content/60">
+                            {user.email} • @{user.username}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <button
                   type="button"
-                  onClick={addParticipant}
+                  onClick={handleSearchUsers}
                   className="btn btn-primary"
                 >
-                  Add
+                  Search
                 </button>
               </div>
               <div className="space-y-1">
-                {event.participants.map((participant) => (
+                {event.participants.map((participantEmail) => (
                   <div
-                    key={participant}
+                    key={participantEmail}
                     className="flex items-center justify-between bg-base-200 p-2 rounded"
                   >
                     <span>
-                      {participant}
-                      {participant === userEmail && (
+                      {participantEmail}
+                      {participantEmail === userEmail && (
                         <span className="badge badge-accent ml-2 text-xs">Creator</span>
                       )}
                     </span>
                     <button
                       type="button"
-                      onClick={() => removeParticipant(participant)}
+                      onClick={() => removeParticipant(participantEmail)}
                       className={`btn btn-sm btn-ghost text-error ${
-                        participant === userEmail ? 'opacity-50 cursor-not-allowed' : ''
+                        participantEmail === userEmail ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
-                      disabled={participant === userEmail}
+                      disabled={participantEmail === userEmail}
                     >
                       Remove
                     </button>

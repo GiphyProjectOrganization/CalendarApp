@@ -3,11 +3,32 @@ import { useSearchParams } from 'react-router-dom';
 import { WeatherCard } from '../weather/WeateherCard';
 import { WEATHER_API_KEY, WEATHER_API_URL } from "../../constants";
 import { UserLocation } from '../../hook/userLocation-hook';
+import { eventService } from '../../services/eventService';
+import { useAuth } from '../../hook/auth-hook';
 
 type ForecastDay = {
   dt: number;
   temp: { day: number; min: number; max: number };
   weather: any[]; 
+};
+
+type EventType = {
+  id: string;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
+  location: string | {
+    placeId: string;
+    address: string;
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
+  };
+  isPublic: boolean;
 };
 
 export const DayView = () => {
@@ -16,35 +37,58 @@ export const DayView = () => {
   const [forecast, setForecast] = useState<ForecastDay[]>([]);
   const [unit, setUnit] = useState<"metric" | "imperial">("metric");
   const [loading, setLoading] = useState(true);
-
-  const { location, isLoading, error } = UserLocation();
+  const [events, setEvents] = useState<EventType[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsError, setEventsError] = useState<string | null>(null);
+  const { location, isLoading: locationLoading, error: locationError } = UserLocation();
+  const { userId, token } = useAuth();
 
   useEffect(() => {
     if (!location.lat || !location.lon || !location.countryCode) return;
     const fahrenheitCountries = ['US', 'BS', 'BZ', 'KY', 'PW'];
-    const userUnit = fahrenheitCountries.includes(location.countryCode || '') ? 'imperial' : 'metric';
+    const userUnit = fahrenheitCountries.includes(location.countryCode) ? 'imperial' : 'metric';
     setUnit(userUnit);
 
     const fetchWeatherData = async () => {
       try {
-        const weatherRes = await fetch(
+        const res = await fetch(
           `${WEATHER_API_URL}/onecall?lat=${location.lat}&lon=${location.lon}&exclude=minutely,hourly,alerts&units=${userUnit}&appid=${WEATHER_API_KEY}`
         );
-        const weatherData = await weatherRes.json();
-        setForecast(weatherData.daily.slice(0, 7));
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching weather data:', error);
+        const data = await res.json();
+        setForecast(data.daily.slice(0, 7));
+      } catch (err) {
+        console.error("Weather fetch error:", err);
+      } finally {
         setLoading(false);
       }
     };
     fetchWeatherData();
-  }, [location.lat, location.lon, location.countryCode]);
+  }, [location]);
 
-  const parseUTCDate = (dateString: string) => {
-    const [year, month, day] = dateString.split('-').map(Number);
+  useEffect(() => {
+    if (!token) return;
+    
+    const fetchEvents = async () => {
+      setEventsLoading(true);
+      setEventsError(null);
+      try {
+        const events = await eventService.getParticipatingEvents(token);
+        setEvents(events);
+      } catch (err) {
+        console.error('Failed to fetch events:', err);
+        setEventsError('Failed to load events. Please try again.');
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+    
+    fetchEvents();
+  }, [token]);
+
+  const parseUTCDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
     return new Date(Date.UTC(year, month - 1, day));
-  }
+  };
 
   const getTodayUTC = () => {
     const now = new Date();
@@ -53,12 +97,8 @@ export const DayView = () => {
 
   const targetDate = selectedDate ? parseUTCDate(selectedDate) : getTodayUTC();
 
-  console.log('selectedDate:', selectedDate);
-  console.log('targetDate (UTC):', targetDate.toISOString());
-
   const dayForecast = forecast.find((day) => {
     const forecastDate = new Date(day.dt * 1000);
-    console.log('Comparing forecastDate (UTC):', forecastDate.toISOString());
     return (
       forecastDate.getUTCFullYear() === targetDate.getUTCFullYear() &&
       forecastDate.getUTCMonth() === targetDate.getUTCMonth() &&
@@ -66,7 +106,75 @@ export const DayView = () => {
     );
   });
 
-  const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+  const timeSlots = Array.from({ length: 24 }, (_, i) => ({
+    hour: i,
+    time: `${i.toString().padStart(2, '0')}:00`,
+    events: [] as EventType[]
+  }));
+
+  events.forEach(event => {
+    const eventStart = new Date(`${event.startDate}T${event.startTime}`);
+    const eventEnd = new Date(`${event.endDate}T${event.endTime}`);
+
+    const eventStartUTC = new Date(
+      Date.UTC(
+        eventStart.getFullYear(),
+        eventStart.getMonth(),
+        eventStart.getDate(),
+        eventStart.getHours(),
+        eventStart.getMinutes()
+      )
+    );
+    
+    const eventEndUTC = new Date(
+      Date.UTC(
+        eventEnd.getFullYear(),
+        eventEnd.getMonth(),
+        eventEnd.getDate(),
+        eventEnd.getHours(),
+        eventEnd.getMinutes()
+      )
+    );
+
+    const timeSlotEvent: EventType = {
+      ...event,
+      location: typeof event.location === 'object' 
+        ? event.location.address 
+        : event.location
+    };
+
+    if (
+      eventStartUTC.getUTCFullYear() === targetDate.getUTCFullYear() &&
+      eventStartUTC.getUTCMonth() === targetDate.getUTCMonth() &&
+      eventStartUTC.getUTCDate() === targetDate.getUTCDate()
+    ) {
+      const startHour = eventStartUTC.getUTCHours();
+      const endHour = Math.min(eventEndUTC.getUTCHours(), 23); //Cap at 23:59
+
+      for (let hour = startHour; hour <= endHour; hour++) {
+        timeSlots[hour].events.push(timeSlotEvent);
+      }
+    }
+  });
+
+  const isEventStartingAtHour = (event: EventType, hour: number) => {
+    const eventStart = new Date(`${event.startDate}T${event.startTime}`);
+    const eventStartUTC = new Date(
+      Date.UTC(
+        eventStart.getFullYear(),
+        eventStart.getMonth(),
+        eventStart.getDate(),
+        eventStart.getHours(),
+        eventStart.getMinutes()
+      )
+    );
+    return eventStartUTC.getUTCHours() === hour;
+  };
+
+  const getDisplayAddress = (location: EventType['location']): string => {
+    if (typeof location === 'string') return location;
+    return location.address;
+  };
 
   return (
     <div className="grid md:grid-cols-4 gap-4 p-4">
@@ -84,28 +192,79 @@ export const DayView = () => {
 
             <div className="divider my-2" />
 
-            <div className="overflow-y-auto max-h-[75vh]">
-              {hours.map(hour => (
-                <div
-                  key={hour}
-                  className="flex items-start py-2 px-1 hover:bg-base-200 transition-colors"
-                >
-                  <div className="w-16 text-sm text-right pr-3 text-base-content/50 font-mono">
-                    {hour}
+            {eventsLoading && (
+              <div className="flex justify-center py-8">
+                <span className="loading loading-spinner loading-lg"></span>
+              </div>
+            )}
+
+            {eventsError && (
+              <div className="alert alert-error mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{eventsError}</span>
+              </div>
+            )}
+
+            {!eventsLoading && (
+              <div className="overflow-y-auto max-h-[75vh]">
+                {timeSlots.map((slot) => (
+                  <div
+                    key={slot.time}
+                    className="flex items-start py-2 px-1 hover:bg-base-200 transition-colors"
+                    style={{ minHeight: '4rem' }}
+                  >
+                    <div className="w-16 text-sm text-right pr-3 text-base-content/50 font-mono">
+                      {slot.time}
+                    </div>
+                    <div className="flex-1 border-l pl-4 text-base-content text-sm space-y-1">
+                      {slot.events.length > 0 ? (
+                        slot.events.map((event) => (
+                          isEventStartingAtHour(event, slot.hour) ? (
+                            <div
+                              key={`${event.id}-${slot.hour}`}
+                              className="p-2 bg-primary text-primary-content rounded shadow-sm mb-1"
+                            >
+                              <div className="font-semibold">{event.title}</div>
+                              <div className="text-xs opacity-80">
+                                {new Date(`${event.startDate}T${event.startTime}`).toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })} - {new Date(`${event.endDate}T${event.endTime}`).toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </div>
+                              {event.location && (
+                                <div className="text-xs opacity-80 mt-1">
+                                  <i className="fas fa-map-marker-alt mr-1"></i>
+                                  {getDisplayAddress(event.location)}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div 
+                              key={`${event.id}-cont-${slot.hour}`}
+                              className="h-2 bg-primary/20 rounded-full"
+                            ></div>
+                          )
+                        ))
+                      ) : (
+                        <span className="italic text-base-content/40">No events</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1 border-l pl-4 text-base-content text-sm min-h-[2rem]">
-                    <span className="italic text-base-content/40">No events</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       <div className="md:col-span-1">
         {dayForecast && <WeatherCard day={dayForecast} unit={unit} />}
-        {!dayForecast && error && (
+        {!dayForecast && locationError && (
           <div className="alert alert-error shadow-md w-full">
             <svg
               xmlns="http://www.w3.org/2000/svg"

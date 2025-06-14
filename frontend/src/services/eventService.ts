@@ -1,11 +1,19 @@
 export interface Event {
+  id: string;
   title: string;
   description: string;
   startDate: string;
   startTime: string;
   endDate: string;
   endTime: string;
-  location: string;
+  location: {
+    placeId: string;
+    address: string;
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
+  } | string;
   isPublic: boolean;
   isDraft: boolean;
   tags: string[];
@@ -27,14 +35,29 @@ export const eventService = {
   async createEvent(
     eventData: Event & { createdAt?: string; updatedAt?: string }
   ): Promise<{ message: string; eventId?: string }> {
+
+    const formattedEventData = {
+      ...eventData,
+      location: typeof eventData.location === 'string'
+        ? eventData.location
+        : {
+            placeId: eventData.location.placeId,
+            address: eventData.location.address,
+            ...(eventData.location.coordinates && {
+              coordinates: eventData.location.coordinates
+            })
+          }
+    };
+
     const response = await fetch(`${API_BASE_URL}/events`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
         // TODO: Add authorization header when auth is implemented
         // 'Authorization': `Bearer ${getAuthToken()}`
       },
-      body: JSON.stringify(eventData),
+      body: JSON.stringify(formattedEventData),
     });
 
     if (!response.ok) {
@@ -61,4 +84,57 @@ export const eventService = {
 
     return response.json();
   },
+
+    async getCreatedEvents(userId: string): Promise<Event[]> {
+    const response = await fetch(`${API_BASE_URL}/created/${userId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch created events');
+    }
+
+    return response.json();
+  },
+
+  async searchUsers(query: string): Promise<Array<{
+    id: string;
+    email: string;
+    username: string;
+    name: string;
+  }>> {
+    const response = await fetch(`${API_BASE_URL}/users/lookup?query=${encodeURIComponent(query)}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to search users');
+    }
+
+    return response.json();
+  },
+
+  async getParticipatingEvents(token: string): Promise<Event[]> {
+    const response = await fetch(`${API_BASE_URL}/participating`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const events = await response.json();
+  
+    return events.map((event: any) => ({
+      ...event,
+      location: event.location?.address || event.location || ''
+    }));
+  }
 };
