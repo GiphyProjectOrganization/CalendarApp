@@ -16,7 +16,7 @@ export const MonthView = () => {
   const [isHexTheme, setIsHexTheme] = useState(false);
   const [countryCode, setCountryCode] = useState<string | undefined>();
   const { location, isLoading, error } = UserLocation();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
 
   const handleDateClick = (date: Date) => {
     const yyyy = date.getFullYear();
@@ -115,7 +115,7 @@ export const MonthView = () => {
       </div>
 
       {error && (
-        <div className="text-error-content text-center my-2 text-sm">
+        <div className="text-error text-center my-2 text-sm">
           Could not load holidays for your country. Calendar is still available.
         </div>
       )}
