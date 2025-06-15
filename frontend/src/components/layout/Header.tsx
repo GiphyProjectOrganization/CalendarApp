@@ -75,15 +75,6 @@ export function Header() {
             </MenuItem> */}
 
             <MenuItem>
-              <a
-                onClick={logout}
-                className="block px-4 py-2 text-sm cursor-pointer  data-focus:outline-hidden"
-              >
-                Sign out
-              </a>
-            </MenuItem>
-
-            <MenuItem>
               <NavLink to='/profileCard'
                 className="block px-4 py-2 text-sm cursor-pointer data-focus:outline-hidden"
               >
@@ -97,6 +88,15 @@ export function Header() {
               >
                 Edit Profile
               </NavLink>
+            </MenuItem>
+
+            <MenuItem>
+              <a
+                onClick={logout}
+                className="block px-4 py-2 text-sm cursor-pointer  data-focus:outline-hidden"
+              >
+                Sign out
+              </a>
             </MenuItem>
           </MenuItems>
         </Menu>}
