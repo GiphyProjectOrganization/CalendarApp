@@ -5,6 +5,8 @@ import { WEATHER_API_KEY, WEATHER_API_URL } from "../../constants";
 import { UserLocation } from '../../hook/userLocation-hook';
 import { eventService } from '../../services/eventService';
 import { useAuth } from '../../hook/auth-hook';
+import { EventCard } from '../events/EventCard';
+import { Event } from '../../services/eventService';
 
 type ForecastDay = {
   dt: number;
@@ -12,13 +14,13 @@ type ForecastDay = {
   weather: any[]; 
 };
 
-type EventType = {
+export type EventCardData = {
   id: string;
   title: string;
   description: string;
   startDate: string;
-  endDate: string;
   startTime: string;
+  endDate: string;
   endTime: string;
   location: string | {
     placeId: string;
@@ -37,11 +39,12 @@ export const DayView = () => {
   const [forecast, setForecast] = useState<ForecastDay[]>([]);
   const [unit, setUnit] = useState<"metric" | "imperial">("metric");
   const [loading, setLoading] = useState(true);
-  const [events, setEvents] = useState<EventType[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsError, setEventsError] = useState<string | null>(null);
   const { location, isLoading: locationLoading, error: locationError } = UserLocation();
   const { userId, token } = useAuth();
+  const [hoveredHour, setHoveredHour] = useState<number | null>(null);
 
   useEffect(() => {
     if (!location.lat || !location.lon || !location.countryCode) return;
@@ -109,8 +112,20 @@ export const DayView = () => {
   const timeSlots = Array.from({ length: 24 }, (_, i) => ({
     hour: i,
     time: `${i.toString().padStart(2, '0')}:00`,
-    events: [] as EventType[]
+    events: [] as EventCardData[]
   }));
+
+    const eventToCardData = (event: Event): EventCardData => ({
+    id: event.id,
+    title: event.title,
+    description: event.description,
+    startDate: event.startDate,
+    startTime: event.startTime,
+    endDate: event.endDate,
+    endTime: event.endTime,
+    location: event.location,
+    isPublic: event.isPublic
+  });
 
   events.forEach(event => {
     const eventStart = new Date(`${event.startDate}T${event.startTime}`);
@@ -136,7 +151,7 @@ export const DayView = () => {
       )
     );
 
-    const timeSlotEvent: EventType = {
+    const timeSlotEvent: EventCardData = {
       ...event,
       location: typeof event.location === 'object' 
         ? event.location.address 
@@ -152,12 +167,12 @@ export const DayView = () => {
       const endHour = Math.min(eventEndUTC.getUTCHours(), 23); //Cap at 23:59
 
       for (let hour = startHour; hour <= endHour; hour++) {
-        timeSlots[hour].events.push(timeSlotEvent);
+        timeSlots[hour].events.push(eventToCardData(event));
       }
     }
   });
 
-  const isEventStartingAtHour = (event: EventType, hour: number) => {
+  const isEventStartingAtHour = (event: EventCardData, hour: number) => {
     const eventStart = new Date(`${event.startDate}T${event.startTime}`);
     const eventStartUTC = new Date(
       Date.UTC(
@@ -169,11 +184,6 @@ export const DayView = () => {
       )
     );
     return eventStartUTC.getUTCHours() === hour;
-  };
-
-  const getDisplayAddress = (location: EventType['location']): string => {
-    if (typeof location === 'string') return location;
-    return location.address;
   };
 
   return (
@@ -209,45 +219,32 @@ export const DayView = () => {
 
             {!eventsLoading && (
               <div className="overflow-y-auto max-h-[75vh]">
-                {timeSlots.map((slot) => (
+                {timeSlots.map((slot, hourIndex) => (
                   <div
                     key={slot.time}
-                    className="flex items-start py-2 px-1 hover:bg-base-200 transition-colors"
-                    style={{ minHeight: '4rem' }}
+                    className={`flex items-start py-2 px-1 transition-colors ${
+                      hoveredHour === hourIndex ? 'bg-base-200' : 'hover:bg-base-100'
+                    }`}
+                    onMouseEnter={() => setHoveredHour(hourIndex)}
+                    onMouseLeave={() => setHoveredHour(null)}
                   >
                     <div className="w-16 text-sm text-right pr-3 text-base-content/50 font-mono">
                       {slot.time}
                     </div>
-                    <div className="flex-1 border-l pl-4 text-base-content text-sm space-y-1">
+                    <div className="flex-1 border-l pl-4 text-base-content text-sm min-h-[2rem] space-y-1">
                       {slot.events.length > 0 ? (
                         slot.events.map((event) => (
-                          isEventStartingAtHour(event, slot.hour) ? (
-                            <div
-                              key={`${event.id}-${slot.hour}`}
-                              className="p-2 bg-primary text-primary-content rounded shadow-sm mb-1"
-                            >
-                              <div className="font-semibold">{event.title}</div>
-                              <div className="text-xs opacity-80">
-                                {new Date(`${event.startDate}T${event.startTime}`).toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })} - {new Date(`${event.endDate}T${event.endTime}`).toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </div>
-                              {event.location && (
-                                <div className="text-xs opacity-80 mt-1">
-                                  <i className="fas fa-map-marker-alt mr-1"></i>
-                                  {getDisplayAddress(event.location)}
-                                </div>
-                              )}
-                            </div>
+                          isEventStartingAtHour(event, hourIndex) ? (
+                            <EventCard 
+                              key={event.id}
+                              event={event as EventCardData}
+                              compact={false}
+                            />
                           ) : (
                             <div 
-                              key={`${event.id}-cont-${slot.hour}`}
+                              key={`${event.id}-cont`}
                               className="h-2 bg-primary/20 rounded-full"
-                            ></div>
+                            />
                           )
                         ))
                       ) : (

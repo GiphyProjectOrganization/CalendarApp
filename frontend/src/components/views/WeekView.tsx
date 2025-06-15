@@ -2,33 +2,16 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { generateHours } from "../../services/calendarService";
 import { eventService } from "../../services/eventService";
 import { useAuth } from '../../hook/auth-hook';
+import { Event } from "../../services/eventService";
+import { EventCard } from "../events/EventCard";
 
 interface WeekViewProps {
   startDate?: Date;
 }
 
-interface EventType {
-  id: string;
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  startTime: string;
-  endTime: string;
-  location: string | {
-    placeId: string;
-    address: string;
-    coordinates?: {
-      lat: number;
-      lng: number;
-    };
-  };
-  isPublic: boolean;
-}
-
 export function WeekView({ startDate = new Date() }: WeekViewProps) {
   const { token } = useAuth();
-  const [events, setEvents] = useState<EventType[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hoveredHour, setHoveredHour] = useState<number | null>(null);
@@ -75,7 +58,7 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
     fetchEvents();
   }, [token]);
 
-  const getEventsForTimeSlot = useCallback((day: Date, hour: number): EventType[] => {
+  const getEventsForTimeSlot = useCallback((day: Date, hour: number): Event[] => {
     return events.filter(event => {
       const eventStart = new Date(`${event.startDate}T${event.startTime}`);
       const eventEnd = new Date(`${event.endDate}T${event.endTime}`);
@@ -88,12 +71,7 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
     });
   }, [events]);
 
-  const getDisplayAddress = useCallback((location: EventType['location']): string => {
-    if (typeof location === 'string') return location;
-    return location.address;
-  }, []);
-
-  const isEventStartingAtHour = useCallback((event: EventType, hour: number) => {
+  const isEventStartingAtHour = useCallback((event: Event, hour: number) => {
     const eventStart = new Date(`${event.startDate}T${event.startTime}`);
     return eventStart.getHours() === hour;
   }, []);
@@ -211,34 +189,28 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
                     setHoveredDay(null);
                   }}
                 >
-                  {timeSlotEvents.map((event, eventIdx) => (
+                  {timeSlotEvents.map((event) => (
                     isEventStartingAtHour(event, hourIdx) ? (
-                      <div
-                        key={eventIdx}
-                        className="absolute inset-0.5 p-1 bg-primary text-primary-content rounded text-xs overflow-hidden"
-                      >
-                        <div className="font-semibold truncate">{event.title}</div>
-                        <div className="truncate">
-                          {new Date(`${event.startDate}T${event.startTime}`).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })} - {new Date(`${event.endDate}T${event.endTime}`).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </div>
-                        {event.location && (
-                          <div className="truncate">
-                            <i className="fas fa-map-marker-alt mr-1"></i>
-                            {getDisplayAddress(event.location)}
-                          </div>
-                        )}
-                      </div>
+                      <EventCard 
+                        key={event.id}
+                        event={{
+                          id: event.id,
+                          title: event.title,
+                          description: event.description,
+                          startDate: event.startDate,
+                          startTime: event.startTime,
+                          endDate: event.endDate,
+                          endTime: event.endTime,
+                          location: event.location,
+                          isPublic: event.isPublic
+                        }}
+                        compact={true}
+                      />
                     ) : (
                       <div 
-                        key={eventIdx}
+                        key={`${event.id}-cont`}
                         className="absolute inset-0.5 bg-primary/20"
-                      ></div>
+                      />
                     )
                   ))}
                 </div>
