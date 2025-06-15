@@ -72,7 +72,7 @@ export function Header() {
 
       <div className="navbar-end">
 
-        <div className="dropdown dropdown-end mr-2">
+        {isLoggedIn && <div className="dropdown dropdown-end mr-2">
           <label tabIndex={0} className="btn btn-ghost btn-circle">
             <svg
               className="w-6 h-6"
@@ -125,19 +125,20 @@ export function Header() {
                       </div>
                       <div className="flex flex-col">
                         <span className="font-semibold text-base">{user.name}</span>
-                        <span className="text-xs text-gray-500">{user.email}</span>
-                        <span className="text-xs text-gray-400">{user.phoneNumber}</span>
+                        <span className="text-xs">{user.email}</span>
+                        <span className="text-xs">{user.phoneNumber}</span>
                       </div>
                     </div>
                   </li>
                 ))}
               </ul>
             )}
+
             {!isSearching && searchQuery && searchResults.length === 0 && !searchError && (
               <div className="mt-2 text-xs text-gray-400 text-center">No users found.</div>
             )}
           </div>
-        </div>
+        </div>}
 
         {isLoggedIn && (
           <Link
