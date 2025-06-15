@@ -40,10 +40,7 @@ export default function LoginPage() {
             });
             const data = await res.json();
             if (res.ok) {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('userId', data.userId);
-                alert('Login successful!');
-                auth.login(data.userId, data.token, user.email);
+                auth.login(data.userId, data.token, user.email, data.profilePhoto);
                 navigate('/')
             } else {
                 alert(data.message || `Login failed`);

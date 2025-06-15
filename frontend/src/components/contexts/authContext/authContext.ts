@@ -5,7 +5,8 @@ interface AuthContextType {
     userId: string | null;
     userEmail: string | null;
     token: string | null;
-    login: (token: string, userId: string, userEmail: string) => void;
+    profilePhoto: string | null,
+    login: (token: string, userId: string, userEmail: string, profilePhoto: string) => void;
     logout: () => void;
 }
 
@@ -14,6 +15,7 @@ export const AuthContext = createContext<AuthContextType>({
     userId: null,
     userEmail: null,
     token: null,
+    profilePhoto: null,
     login: () => { },
     logout: () => { }
 });

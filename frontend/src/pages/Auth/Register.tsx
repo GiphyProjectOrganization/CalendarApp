@@ -94,8 +94,11 @@ export function Register() {
             });
             const data = await res.json();
             if (res.ok) {
-                alert("Registration successful!");
-                auth.login(data.userId, data.email, data.token);
+                // Store profile photo in localStorage if present
+                if (user.photoBase64) {
+                    localStorage.setItem("profilePhoto", user.photoBase64);
+                }
+                auth.login(data.userId, data.email, data.token, data.profilePhoto);
                 navigate('/');
             } else {
                 alert(`Error: ${data.message}`);

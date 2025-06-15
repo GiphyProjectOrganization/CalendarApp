@@ -81,7 +81,7 @@ export function EditProfile() {
 
         try {
             if (!token) {
-                alert("Invalid token111");
+                alert("Invalid token");
                 return;
             }
             const res = await fetch("http://localhost:5000/api/user/me", {

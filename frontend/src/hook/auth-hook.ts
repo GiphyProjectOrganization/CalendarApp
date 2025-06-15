@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, Dispatch, SetStateAction } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 let logoutTime: ReturnType<typeof setTimeout> | undefined;
 
@@ -6,7 +6,8 @@ interface AuthHook {
     token: string | null;
     userId: string | null;
     userEmail: string | null;
-    login: (uid: string, token: string, email: string, expirationDate?: Date) => void;
+    profilePhoto: string | null;
+    login: (uid: string, token: string, email: string, profilePhoto?: string, expirationDate?: Date) => void;
     logout: () => void;
 }
 
@@ -15,13 +16,21 @@ export function useAuth(): AuthHook {
     const [userId, setUserId] = useState<string | null>(null);
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [tokenExpirationTime, setTokenExpirationTime] = useState<Date | null>(null);
+    const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
-    const login = useCallback((uid: string, token: string, email: string, expirationDate?: Date) => {
+    const login = useCallback((uid: string, token: string, email: string, profilePhoto?: string, expirationDate?: Date) => {
         localStorage.setItem('token', token);
+        if (profilePhoto) {
+            localStorage.setItem('profilePhoto', profilePhoto);
+        } else {
+            localStorage.removeItem('profilePhoto');
+        }
         localStorage.setItem('userId', uid);
         localStorage.setItem('userEmail', email);
         setToken(token);
         setUserId(uid);
+        setUserEmail(email);
+        setProfilePhoto(profilePhoto || null);
         const expiration = expirationDate || new Date(new Date().getTime() + 1000 * 60 * 60);
         setTokenExpirationTime(expiration);
         localStorage.setItem(
@@ -30,14 +39,16 @@ export function useAuth(): AuthHook {
         );
     }, []);
 
-    const logout = useCallback((uid: string, token: string, email: string, expirationDate?: Date) => {
-        localStorage.setItem('token', token);
-        localStorage.setItem('userId', uid);
-        localStorage.setItem('userEmail', email);
+    const logout = useCallback(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('profilePhoto');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userEmail');
         setToken(null);
         setTokenExpirationTime(null);
         setUserId(null);
-        setUserEmail(null)
+        setUserEmail(null);
+        setProfilePhoto(null);
         localStorage.removeItem('userData');
     }, []);
 
@@ -55,10 +66,10 @@ export function useAuth(): AuthHook {
         if (stored) {
             const data: { userId: string; email: string; token: string; expiration: string } = JSON.parse(stored);
             if (data && data.token && new Date(data.expiration) > new Date()) {
-                login(data.userId, data.token, data.email, new Date(data.expiration));
+                login(data.userId, data.token, data.email, localStorage.getItem('profilePhoto') || undefined, new Date(data.expiration));
             }
         }
     }, [login]);
 
-    return { token, userId, userEmail, login, logout };
+    return { token, userId, userEmail, login, logout, profilePhoto };
 }

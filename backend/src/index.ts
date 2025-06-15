@@ -77,7 +77,7 @@ export interface Event {
   };
   createdAt: string;
   updatedAt: string;
-  createdBy: string; 
+  createdBy: string;
   creatorUsername?: string;
   creatorEmail?: string;
 }
@@ -167,6 +167,9 @@ app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res:
     );
 
     res.status(201).json({
+      userId: insertedUser._id.toString(),
+      email: insertedUser.email,
+      profilePhoto: insertedUser.photoBase64,
       token
     });
     return;
@@ -218,8 +221,9 @@ app.post("/api/login", async (req: Request, res: Response): Promise<void> => {
     );
 
     res.status(201).json({
-      userId: existingUser._id.toString(),  
+      userId: existingUser._id.toString(),
       email: existingUser.email,
+      profilePhoto: existingUser.photoBase64,
       token
     });
   } catch (err) {
@@ -270,7 +274,7 @@ app.post("/api/events", authMiddleware, async (req: AuthRequest, res: Response) 
   }
   const startDateTime = new Date(`${startDate}T${startTime}`);
   const endDateTime = new Date(`${endDate}T${endTime}`);
-  const locationData = typeof location === 'string' 
+  const locationData = typeof location === 'string'
     ? { placeId: '', address: location }
     : location;
   if (endDateTime <= startDateTime) {
@@ -363,7 +367,7 @@ app.get("/api/events/:eventId", async (req, res, next) => {
 
     const event = await eventsCollection.findOne({
       _id: new ObjectId(req.params.eventId),
-      isDraft: false 
+      isDraft: false
     });
 
     const creator = await usersCollection.findOne(
@@ -380,7 +384,7 @@ app.get("/api/events/:eventId", async (req, res, next) => {
       ...event,
       id: event._id.toString(),
       creatorUsername: creator?.username || 'Unknown',
-      _id: undefined 
+      _id: undefined
     };
 
     res.status(200).json(responseEvent);
@@ -416,9 +420,9 @@ app.get("/api/participating", authMiddleware, async (req: AuthRequest, res: Resp
     }
 
     const events = await eventsCollection
-      .find({ 
+      .find({
         participants: currentUser.email,
-        isDraft: false 
+        isDraft: false
       })
       .toArray();
 
@@ -508,8 +512,8 @@ app.patch("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response
   }
 }),
 
-app.get("/api/users/lookup", authMiddleware, (async (req, res, next) => {
-  try {
+  app.get("/api/users/lookup", authMiddleware, (async (req, res, next) => {
+    try {
       const authReq = req as AuthRequest;
       const { query } = req.query;
 
@@ -548,7 +552,7 @@ app.get("/api/users/lookup", authMiddleware, (async (req, res, next) => {
       return next(err);
     }
   }) as RequestHandler
-);
+  );
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
