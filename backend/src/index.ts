@@ -525,27 +525,46 @@ app.patch("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response
       const db = client.db("calendar");
       const usersCollection = db.collection<User>("users");
 
-      const users = await usersCollection.find({
-        $or: [
-          { email: { $regex: query, $options: 'i' } },
-          { username: { $regex: query, $options: 'i' } }
-        ]
-      }, {
-        projection: {
-          _id: 1,
-          email: 1,
-          username: 1,
-          firstName: 1,
-          lastName: 1
-        }
-      }).limit(10).toArray();
+      // Build $or array for searching by email, username, phoneNumber, or full name
+      const searchRegex = new RegExp(query, 'i');
+      const users = await usersCollection.aggregate([
+        {
+          $addFields: {
+            fullName: { $concat: ["$firstName", " ", "$lastName"] }
+          }
+        },
+        {
+          $match: {
+            $or: [
+              { email: { $regex: searchRegex } },
+              { username: { $regex: searchRegex } },
+              { phoneNumber: { $regex: searchRegex } },
+              { fullName: { $regex: searchRegex } }
+            ]
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            email: 1,
+            username: 1,
+            firstName: 1,
+            lastName: 1,
+            phoneNumber: 1,
+            photoBase64: 1
+          }
+        },
+        { $limit: 10 }
+      ]).toArray();
 
       return res.status(200).json(
         users.map(user => ({
           id: user._id?.toString(),
           email: user.email,
           username: user.username,
-          name: `${user.firstName} ${user.lastName}`
+          name: `${user.firstName} ${user.lastName}`,
+          phoneNumber: user.phoneNumber,
+          profilePhoto: user.photoBase64
         }))
       );
     } catch (err) {
@@ -553,7 +572,3 @@ app.patch("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response
     }
   }) as RequestHandler
   );
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
