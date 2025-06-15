@@ -40,12 +40,13 @@ export default function LoginPage() {
             });
             const data = await res.json();
             if (res.ok) {
-                console.log(data);
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('userId', data.userId);
                 alert('Login successful!');
-                auth.login(data.userId, data.token);
+                auth.login(data.userId, data.token, user.email);
                 navigate('/')
             } else {
-                alert(data.message || `Login error`);
+                alert(data.message || `Login failed`);
             }
         } catch (error) {
             console.error(error);

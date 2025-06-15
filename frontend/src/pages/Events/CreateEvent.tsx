@@ -39,6 +39,9 @@ const CreateEvent = () => {
     participants: [], 
     reminders: [],
     isRecurring: false,
+    createdBy: '',
+    creatorUsername: '',
+    creatorEmail: '',
   });
 
   const [newTag, setNewTag] = useState('');
@@ -63,11 +66,18 @@ const CreateEvent = () => {
       if (auth.isLoggedIn && auth.token) {
         try {
           const response = await fetch(`http://localhost:5000/api/user/me`, {
+            method: 'GET',
             headers: {
-              'Authorization': `Bearer ${auth.token}`,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${auth.token}`
             }
           });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to create event');
+          }
+
           if (response.ok) {
             const userData = await response.json();
             setUserEmail(userData.email);
@@ -245,7 +255,7 @@ const CreateEvent = () => {
     const eventData = {
       ...event,
       isDraft,
-      createdBy: auth.userId, 
+      createdBy: auth.userId || '', 
       creatorEmail: userEmail, 
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

@@ -45,6 +45,43 @@ export interface User {
   photoBase64?: string;
 }
 
+export interface Event {
+  _id?: ObjectId;
+  id?: string;
+  title: string;
+  description: string;
+  startDate: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+  location: {
+    placeId: string;
+    address: string;
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
+  } | string;
+  isPublic: boolean;
+  isDraft: boolean;
+  tags: string[];
+  participants: string[];
+  reminders: number[];
+  isRecurring: boolean;
+  recurrencePattern?: {
+    type: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    interval: number;
+    endDate?: string;
+    daysOfWeek?: number[];
+    dayOfMonth?: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string; 
+  creatorUsername?: string;
+  creatorEmail?: string;
+}
+
 app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res: Response): Promise<void> => {
   const { username, firstName, lastName, password, phoneNumber, email, photoBase64 } = req.body;
 
@@ -124,7 +161,7 @@ app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res:
     }
 
     const token = jwt.sign(
-      { userId: insertedUser._id, email: newUser.email },
+      { userId: insertedUser._id.toString(), email: newUser.email },
       'secret_token_do_not_share',
       { expiresIn: '1h' }
     );
@@ -175,12 +212,14 @@ app.post("/api/login", async (req: Request, res: Response): Promise<void> => {
     }
 
     const token = jwt.sign(
-      { userId: existingUser._id, email: existingUser.email },
+      { userId: existingUser._id.toString(), email: existingUser.email },
       'secret_token_do_not_share',
       { expiresIn: '1h' }
     );
 
     res.status(201).json({
+      userId: existingUser._id.toString(),  
+      email: existingUser.email,
       token
     });
   } catch (err) {
@@ -189,7 +228,7 @@ app.post("/api/login", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-app.post("/api/events", async (req, res) => {
+app.post("/api/events", authMiddleware, async (req: AuthRequest, res: Response) => {
   const {
     title,
     description,
@@ -209,41 +248,50 @@ app.post("/api/events", async (req, res) => {
     updatedAt
   } = req.body;
 
+  if (!req.userId) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
   if (!title?.trim()) {
     res.status(400).json({ message: "Title is required" });
     return;
   }
-
   if (title.length < 3 || title.length > 30) {
     res.status(400).json({ message: "Title must be between 3 and 30 characters" });
     return;
   }
-
   if (!startDate || !startTime || !endDate || !endTime) {
     res.status(400).json({ message: "Start and end date/time are required" });
     return;
   }
-
   if (description && description.length > 500) {
     res.status(400).json({ message: "Description must not exceed 500 characters" });
     return;
   }
-
   const startDateTime = new Date(`${startDate}T${startTime}`);
   const endDateTime = new Date(`${endDate}T${endTime}`);
   const locationData = typeof location === 'string' 
     ? { placeId: '', address: location }
     : location;
-
   if (endDateTime <= startDateTime) {
     res.status(400).json({ message: "End time must be after start time" });
     return;
   }
-
   try {
     const client = await connectDB();
     const db = client.db("calendar");
     const eventsCollection = db.collection("events");
+    const usersCollection = db.collection<User>("users");
+
+    const creator = await usersCollection.findOne(
+      { _id: new ObjectId(req.userId) },
+      { projection: { username: 1, email: 1 } }
+    );
+
+    if (!creator) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
 
     const eventData = {
       title: title.trim(),
@@ -262,8 +310,9 @@ app.post("/api/events", async (req, res) => {
       recurrencePattern: isRecurring ? recurrencePattern : null,
       createdAt: createdAt || new Date().toISOString(),
       updatedAt: updatedAt || new Date().toISOString(),
-      // TODO: Add createdBy field when authentication is implemented
-      // createdBy: req.user.id
+      createdBy: req.userId,
+      creatorUsername: creator.username,
+      creatorEmail: creator.email
     };
 
     const result = await eventsCollection.insertOne(eventData);
@@ -272,7 +321,6 @@ app.post("/api/events", async (req, res) => {
       message: isDraft ? "Event saved as draft!" : "Event created successfully!",
       eventId: result.insertedId
     });
-
   } catch (err) {
     console.error("Failed to create event:", err);
     res.status(500).json({ message: "Failed to create event. Please try again." });
@@ -300,45 +348,92 @@ app.get("/api/events", async (req, res) => {
   }
 });
 
-app.get("/api/participating", authMiddleware, (async (req: AuthRequest, res: Response, next: NextFunction) => {
-    try {
-      const authReq = req as AuthRequest;
-      if (!authReq.userId) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+// GET single event by ID (public access)
+app.get("/api/events/:eventId", async (req, res, next) => {
+  try {
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const eventsCollection = db.collection<Event>("events");
+    const usersCollection = db.collection<User>("users")
 
-      const client = await connectDB();
-      const db = client.db("calendar");
-      const eventsCollection = db.collection("events");
-      const usersCollection = db.collection<User>("users");
-
-      const currentUser = await usersCollection.findOne(
-        { _id: new ObjectId(authReq.userId) },
-        { projection: { email: 1 } }
-      );
-
-      if (!currentUser?.email) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      const events = await eventsCollection
-        .find({ 
-          participants: currentUser.email,
-          isDraft: false 
-        })
-        .toArray();
-
-      return res.status(200).json(
-        events.map(({ _id, ...rest }) => ({
-          id: _id.toString(),
-          ...rest,
-        }))
-      );
-    } catch (err) {
-      return next(err);
+    if (!ObjectId.isValid(req.params.eventId)) {
+      res.status(400).json({ message: "Invalid event ID format" });
+      return;
     }
-  }) as RequestHandler
-);
+
+    const event = await eventsCollection.findOne({
+      _id: new ObjectId(req.params.eventId),
+      isDraft: false 
+    });
+
+    const creator = await usersCollection.findOne(
+      { _id: new ObjectId(event?.createdBy) },
+      { projection: { username: 1 } }
+    );
+
+    if (!event) {
+      res.status(404).json({ message: "Event not found" });
+      return;
+    }
+
+    const responseEvent = {
+      ...event,
+      id: event._id.toString(),
+      creatorUsername: creator?.username || 'Unknown',
+      _id: undefined 
+    };
+
+    res.status(200).json(responseEvent);
+    return;
+  } catch (err) {
+    console.error("Failed to fetch event:", err);
+    next(err);
+    return;
+  }
+});
+
+app.get("/api/participating", authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const authReq = req as AuthRequest;
+    if (!authReq.userId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const eventsCollection = db.collection("events");
+    const usersCollection = db.collection<User>("users");
+
+    const currentUser = await usersCollection.findOne(
+      { _id: new ObjectId(authReq.userId) },
+      { projection: { email: 1 } }
+    );
+
+    if (!currentUser?.email) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    const events = await eventsCollection
+      .find({ 
+        participants: currentUser.email,
+        isDraft: false 
+      })
+      .toArray();
+
+    res.status(200).json(
+      events.map(({ _id, ...rest }) => ({
+        id: _id.toString(),
+        ...rest,
+      }))
+    );
+    return;
+  } catch (err) {
+    next(err);
+    return;
+  }
+});
 
 // get User by Id
 app.get("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -347,7 +442,6 @@ app.get("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response) 
     const db = client.db("calendar");
     const usersCollection = db.collection<User>("users");
 
-    // req.userId is set by the auth middleware
     const user = await usersCollection.findOne(
       { _id: new ObjectId(String(req.userId)) },
       { projection: { password: 0 } }

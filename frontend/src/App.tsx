@@ -14,6 +14,7 @@ import { WEATHER_API_KEY, WEATHER_API_URL } from './constants';
 import { ProfileCard } from './components/profile/ProfileCard';
 import { Footer } from './components/layout/Footer';
 import { EditProfile } from './components/profile/EditProfile';
+import EventPage from './pages/Events/EventPage';
 
 const ProtectedRoute = ({ children }) => {
   const { isLoggedIn } = useContext(AuthContext);
@@ -26,10 +27,10 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  const { token, userId, logout, login } = useAuth();
+  const { token, userId, userEmail, logout, login } = useAuth();
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn: !!token, userId, token, login, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn: !!token, userId, userEmail, token, login, logout }}>
       <BrowserRouter>
         <Header />
         <Routes>
@@ -52,6 +53,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/events/:eventId" element={<EventPage />} />
         </Routes>
       </BrowserRouter>
       <Footer />

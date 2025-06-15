@@ -95,7 +95,7 @@ export function Register() {
             const data = await res.json();
             if (res.ok) {
                 alert("Registration successful!");
-                auth.login(data.userId, data.token);
+                auth.login(data.userId, data.email, data.token);
                 navigate('/');
             } else {
                 alert(`Error: ${data.message}`);

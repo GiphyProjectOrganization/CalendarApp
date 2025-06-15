@@ -27,6 +27,9 @@ export interface Event {
     daysOfWeek?: number[];
     dayOfMonth?: number;
   };
+  createdBy: string;
+  creatorUsername?: string;
+  creatorEmail?: string;
 }
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -35,6 +38,11 @@ export const eventService = {
   async createEvent(
     eventData: Event & { createdAt?: string; updatedAt?: string }
   ): Promise<{ message: string; eventId?: string }> {
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
 
     const formattedEventData = {
       ...eventData,
@@ -53,7 +61,7 @@ export const eventService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Authorization': `Bearer ${token}`,
         // TODO: Add authorization header when auth is implemented
         // 'Authorization': `Bearer ${getAuthToken()}`
       },
@@ -136,5 +144,37 @@ export const eventService = {
       ...event,
       location: event.location?.address || event.location || ''
     }));
+  },
+
+  async getEventById(eventId: string): Promise<Event> {
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch event';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const text = await response.text();
+    if (!text) {
+      throw new Error('Empty response from server');
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error('Failed to parse response:', text);
+      throw new Error('Invalid response format');
+    }
   }
 };
