@@ -107,7 +107,7 @@ if (error) {
 
       <ul
         tabIndex={0}
-        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-64"
+        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-64 mt-1 m-2 left-0 right-0 mx-auto -translate-x-12 border-1 border-accent"
       >
         {forecast.map((day, idx) => {
           const date = new Date(day.dt * 1000);
