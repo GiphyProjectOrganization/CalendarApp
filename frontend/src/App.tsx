@@ -36,7 +36,7 @@ function App() {
         <Routes>
           <Route path='/register' element={<Register />} />
           <Route path='/' element={<MonthView />} />
-          <Route path='/EditProfile' element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
+          <Route path='/editProfile' element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
           <Route path='/login' element={<LoginPage />} />
           <Route path='/profileCard' element={<ProtectedRoute><ProfileCard /></ProtectedRoute>} />
           <Route path="/calendar" element={<Outlet />}>
