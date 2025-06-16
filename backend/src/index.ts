@@ -578,3 +578,44 @@ app.patch("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response
     }
   }) as RequestHandler
   );
+
+// GET user by ID (public access)
+app.get("/api/users/:userId", async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    if (!ObjectId.isValid(userId)) {
+      res.status(400).json({ message: "Invalid user ID format" });
+      return
+    }
+
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const usersCollection = db.collection<User>("users");
+
+    const user = await usersCollection.findOne(
+      { _id: new ObjectId(userId) },
+      {
+        projection: {
+          password: 0,
+        }
+      }
+    );
+
+    if (!user) {
+      res.status(404).json({ message: "User not found." });
+      return
+    }
+
+    res.status(200).json({
+      id: user._id?.toString(),
+      email: user.email,
+      username: user.username,
+      name: `${user.firstName} ${user.lastName}`,
+      phoneNumber: user.phoneNumber,
+      profilePhoto: user.photoBase64
+    });
+  } catch (err) {
+    console.error("Failed to fetch user:", err);
+    res.status(500).json({ message: "Failed to fetch user" });
+  }
+});

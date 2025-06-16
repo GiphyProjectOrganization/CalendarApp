@@ -1,6 +1,6 @@
 import React, { useContext, useState, useRef } from "react";
 import ThemeSwap from "../contexts/theme/ThemeSwap";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { ViewSwitcher } from "../views/ViewSwitcher";
 import { WeatherForecast } from "../weather/WeatherForecast";
 import { AuthContext } from "../contexts/authContext/authContext";
@@ -10,6 +10,7 @@ import { FaUserCircle } from "react-icons/fa";
 
 export function Header() {
   const { isLoggedIn, logout, profilePhoto } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -118,16 +119,19 @@ export function Header() {
                     <div className="flex items-center gap-3 w-full">
                       <div className="flex-shrink-0">
                         <img
-                          src={user.profilePhoto || "uploads/noProfileImage.png"}
+                          src={user.profilePhoto || "../uploads/noProfileImage.png"}
                           alt={user.name}
                           className="w-8 h-8 rounded-full object-cover"
                         />
                       </div>
-                      <div className="flex flex-col">
+                      <button
+                        className="flex flex-col"
+                        onClick={() => navigate(`/userProfile/${user.id}`)}
+                      >
                         <span className="font-semibold text-base">{user.name}</span>
                         <span className="text-xs">{user.email}</span>
                         <span className="text-xs">{user.phoneNumber}</span>
-                      </div>
+                      </button>
                     </div>
                   </li>
                 ))}
@@ -186,7 +190,7 @@ export function Header() {
             >
               <li>
                 <NavLink
-                  to="/profileCard"
+                  to="/myProfileCard"
                   className="text-base text-base-content hover:bg-accent hover:text-accent-content"
                 >
                   My Profile
