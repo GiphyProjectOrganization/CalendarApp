@@ -300,7 +300,7 @@ const EventPage = () => {
                         <div>
                             <p className="font-medium">{participant}</p>
                             {auth.userEmail === participant && (
-                            <span className="badge badge-accent badge-xs">You</span>
+                            <span className="badge badge-accent badge-xs m-1">You</span>
                             )}
                             {event.creatorEmail === participant && (
                             <span className="badge badge-primary badge-xs">Creator</span>
