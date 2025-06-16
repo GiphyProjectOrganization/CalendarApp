@@ -7,7 +7,9 @@ interface AuthHook {
     userId: string | null;
     userEmail: string | null;
     profilePhoto: string | null;
-    login: (uid: string, token: string, email: string, profilePhoto?: string, expirationDate?: Date) => void;
+    isAdmin: boolean;
+    isBlocked: boolean;
+    login: (uid: string, token: string, email: string, profilePhoto?: string, expirationDate?: Date, isAdmin?: boolean, isBlocked?: boolean) => void;
     logout: () => void;
 }
 
@@ -17,8 +19,10 @@ export function useAuth(): AuthHook {
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [tokenExpirationTime, setTokenExpirationTime] = useState<Date | null>(null);
     const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+    const [isAdmin, setAdmin] = useState<boolean>(false);
+    const [isBlocked, setBlocked] = useState<boolean>(false);
 
-    const login = useCallback((uid: string, token: string, email: string, profilePhoto?: string, expirationDate?: Date) => {
+    const login = useCallback((uid: string, token: string, email: string, profilePhoto?: string, expirationDate?: Date, admin?: boolean, blocked?: boolean) => {
         localStorage.setItem('token', token);
         if (profilePhoto) {
             localStorage.setItem('profilePhoto', profilePhoto);
@@ -27,6 +31,8 @@ export function useAuth(): AuthHook {
         }
         localStorage.setItem('userId', uid);
         localStorage.setItem('userEmail', email);
+        setAdmin(!!admin);
+        setBlocked(!!blocked);
         setToken(token);
         setUserId(uid);
         setUserEmail(email);
@@ -35,7 +41,7 @@ export function useAuth(): AuthHook {
         setTokenExpirationTime(expiration);
         localStorage.setItem(
             'userData',
-            JSON.stringify({ userId: uid, token: token, email: email, expiration: expiration.toISOString() })
+            JSON.stringify({ userId: uid, token: token, email: email, expiration: expiration.toISOString(), isAdmin: !!admin, isBlocked: !!blocked })
         );
     }, []);
 
@@ -49,6 +55,8 @@ export function useAuth(): AuthHook {
         setUserId(null);
         setUserEmail(null);
         setProfilePhoto(null);
+        setAdmin(false);
+        setBlocked(false);
         localStorage.removeItem('userData');
     }, []);
 
@@ -64,12 +72,12 @@ export function useAuth(): AuthHook {
     useEffect(() => {
         const stored = localStorage.getItem('userData');
         if (stored) {
-            const data: { userId: string; email: string; token: string; expiration: string } = JSON.parse(stored);
+            const data: { userId: string; email: string; token: string; expiration: string, isAdmin: boolean, isBlocked: boolean } = JSON.parse(stored);
             if (data && data.token && new Date(data.expiration) > new Date()) {
-                login(data.userId, data.token, data.email, localStorage.getItem('profilePhoto') || undefined, new Date(data.expiration));
+                login(data.userId, data.token, data.email, localStorage.getItem('profilePhoto') || undefined, new Date(data.expiration), data.isAdmin, data.isBlocked);
             }
         }
     }, [login]);
 
-    return { token, userId, userEmail, login, logout, profilePhoto };
+    return { token, userId, userEmail, login, logout, profilePhoto, isAdmin, isBlocked };
 }

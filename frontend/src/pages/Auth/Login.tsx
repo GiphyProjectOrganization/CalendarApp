@@ -18,6 +18,7 @@ export default function LoginPage() {
         email: '',
         password: ''
     });
+
     const auth = useContext(AuthContext);
     const navigate = useNavigate();
 
@@ -39,8 +40,12 @@ export default function LoginPage() {
                 body: JSON.stringify(user),
             });
             const data = await res.json();
+            if (data.isBlocked) {
+                alert('Your account is blocked')
+                return
+            }
             if (res.ok) {
-                auth.login(data.userId, data.token, user.email, data.profilePhoto);
+                auth.login(data.userId, data.token, user.email, data.profilePhoto, data.isAdmin, data.isBlocked);
                 navigate('/')
             } else {
                 alert(data.message || `Login failed`);
@@ -115,6 +120,7 @@ export default function LoginPage() {
                                 >
                                     Sign in
                                 </button>
+
                             </div>
                         </form>
 

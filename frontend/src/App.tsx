@@ -27,10 +27,10 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  const { token, userId, userEmail, logout, login, profilePhoto } = useAuth();
+  const { token, userId, userEmail, logout, login, profilePhoto, isAdmin, isBlocked } = useAuth();
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn: !!token, userId, userEmail, token, login, logout, profilePhoto }}>
+    <AuthContext.Provider value={{ isLoggedIn: !!token, userId, userEmail, token, login, logout, profilePhoto, isAdmin, isBlocked }}>
       <BrowserRouter>
         <Header />
         <Routes>

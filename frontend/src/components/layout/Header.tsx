@@ -113,7 +113,7 @@ export function Header() {
                 {searchResults.map(user => (
                   <li
                     key={user.id}
-                    className="flex flex-col items-start py-2 px-2 rounded-lg hover:bg-primary hover:text-primary-content transition-colors cursor-pointer"
+                    className="flex flex-col items-start py-2 px-2 hover:bg-primary hover:text-primary-content transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-3 w-full">
                       <div className="flex-shrink-0">

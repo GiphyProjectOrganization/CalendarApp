@@ -42,6 +42,7 @@ export interface User {
   lastName: string;
   phoneNumber: string;
   password: string;
+  isBlocked: boolean,
   photoBase64?: string;
 }
 
@@ -144,6 +145,7 @@ app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res:
       username,
       email,
       isAdmin: false,
+      isBlocked: false,
       firstName,
       lastName,
       phoneNumber,
@@ -170,7 +172,9 @@ app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res:
       userId: insertedUser._id.toString(),
       email: insertedUser.email,
       profilePhoto: insertedUser.photoBase64,
-      token
+      token,
+      isAdmin: insertedUser.isAdmin,
+      isBlocked: insertedUser.isBlocked
     });
     return;
   } catch (err) {
@@ -224,7 +228,9 @@ app.post("/api/login", async (req: Request, res: Response): Promise<void> => {
       userId: existingUser._id.toString(),
       email: existingUser.email,
       profilePhoto: existingUser.photoBase64,
-      token
+      token,
+      isAdmin: existingUser.isAdmin,
+      isBlocked: existingUser.isBlocked
     });
   } catch (err) {
     console.error(err);
