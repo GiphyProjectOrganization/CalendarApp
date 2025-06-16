@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useRef } from "react";
 import ThemeSwap from "../contexts/theme/ThemeSwap";
 import { Link, NavLink } from "react-router-dom";
 import { ViewSwitcher } from "../views/ViewSwitcher";
@@ -6,9 +6,58 @@ import { WeatherForecast } from "../weather/WeatherForecast";
 import { AuthContext } from "../contexts/authContext/authContext";
 import './Header.css';
 import { useAuth } from "../../hook/auth-hook";
+import { FaUserCircle } from "react-icons/fa";
 
 export function Header() {
   const { isLoggedIn, logout, profilePhoto } = useContext(AuthContext);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  //backend
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+
+    if (!value.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      setSearchError(null);
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchError(null);
+
+    //this timeout is for prevents sending a request for every single keystroke!
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(
+          `http://localhost:5000/api/users/lookup?query=${encodeURIComponent(value)}`,
+          {
+            headers: {
+              "Authorization": token ? `Bearer ${token}` : "",
+            },
+          }
+        );
+        if (!res.ok) {
+          throw new Error("Failed to search users");
+        }
+        const data = await res.json();
+        setSearchResults(data);
+        setIsSearching(false);
+      } catch (err) {
+        setSearchError("Error searching users");
+        setIsSearching(false);
+      }
+    }, 300);
+  };
 
   return (
     <div className="navbar bg-base-100 shadow-md">
@@ -22,6 +71,75 @@ export function Header() {
       </div>
 
       <div className="navbar-end">
+
+        {isLoggedIn && <div className="dropdown dropdown-end mr-2">
+          <label tabIndex={0} className="btn btn-ghost btn-circle">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </label>
+          <div tabIndex={0} className="dropdown-content z-[1] p-2 shadow bg-base-100 rounded-box w-72 mt-2">
+            <input
+              type="text"
+              placeholder="Search users..."
+              className="input input-bordered w-full"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              autoComplete="off"
+            />
+
+            {isSearching && (
+              <div className="mt-2 text-center text-xs text-gray-500">Searching...</div>
+            )}
+
+
+            {searchError && (
+              <div className="mt-2 text-error text-xs">{searchError}</div>
+            )}
+
+            {!isSearching && searchResults.length > 0 && (
+              <ul
+                className="menu menu-sm mt-2 max-h-64 overflow-y-auto flex flex-col gap-1"
+                style={{ minWidth: "16rem" }}
+              >
+                {searchResults.map(user => (
+                  <li
+                    key={user.id}
+                    className="flex flex-col items-start py-2 px-2 rounded-lg hover:bg-primary hover:text-primary-content transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="flex-shrink-0">
+                        <img
+                          src={user.profilePhoto || "uploads/noProfileImage.png"}
+                          alt={user.name}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-base">{user.name}</span>
+                        <span className="text-xs">{user.email}</span>
+                        <span className="text-xs">{user.phoneNumber}</span>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {!isSearching && searchQuery && searchResults.length === 0 && !searchError && (
+              <div className="mt-2 text-xs text-gray-400 text-center">No users found.</div>
+            )}
+          </div>
+        </div>}
+
         {isLoggedIn && (
           <Link
             className="btn btn-primary hover:bg-accent hover:text-accent-content btn-sm mr-2"
@@ -49,6 +167,7 @@ export function Header() {
             </Link>
           </>
         )}
+
 
         {isLoggedIn && (
           <div className="dropdown dropdown-end ml-3">
