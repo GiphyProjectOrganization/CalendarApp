@@ -15,6 +15,7 @@ import { ProfileCard } from './components/profile/ProfileCard';
 import { Footer } from './components/layout/Footer';
 import { EditProfile } from './components/profile/EditProfile';
 import EventPage from './pages/Events/EventPage';
+import { UserProfile } from './components/profile/UserProfile';
 
 const ProtectedRoute = ({ children }) => {
   const { isLoggedIn } = useContext(AuthContext);
@@ -38,7 +39,8 @@ function App() {
           <Route path='/' element={<MonthView />} />
           <Route path='/editProfile' element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
           <Route path='/login' element={<LoginPage />} />
-          <Route path='/profileCard' element={<ProtectedRoute><ProfileCard /></ProtectedRoute>} />
+          <Route path='/userProfile/:userId' element={<UserProfile />} />
+          <Route path='/myProfileCard' element={<ProtectedRoute><ProfileCard /></ProtectedRoute>} />
           <Route path="/calendar" element={<Outlet />}>
             <Route path="day" element={<DayView />} />
             <Route path="week" element={<WeekView />} />
