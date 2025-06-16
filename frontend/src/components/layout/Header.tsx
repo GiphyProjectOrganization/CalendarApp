@@ -172,7 +172,6 @@ export function Header() {
           </>
         )}
 
-
         {isLoggedIn && (
           <div className="dropdown dropdown-end ml-3">
             <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar hover:scale-110 transition-transform">
@@ -214,6 +213,15 @@ export function Header() {
               </li>
             </ul>
           </div>
+        )}
+
+        {isLoggedIn && (
+          <Link
+            to="/admin"
+            className="btn btn-sm btn-ghost text-warning mr-2"
+          >
+            Admin
+          </Link>
         )}
       </div>
     </div>
