@@ -1,6 +1,7 @@
 interface ImportMetaEnv {
   readonly VITE_WEATHER_API: string;
   readonly VITE_MAPS_API: string;
+  readonly VITE_STATIC_MAPS_API: string;
 }
 
 interface ImportMeta {
