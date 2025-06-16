@@ -124,31 +124,38 @@ export const MonthView = () => {
         <div className="honeycomb">
           {chunkDates(dates, 7).map((week, rowIdx) => (
             <div key={rowIdx} className={`honey-row ${rowIdx % 2 === 1 ? 'offset' : ''}`}>
-              {week.map((date, idx) => (
-                <div 
-                  key={idx} 
-                  onClick={() => handleDateClick(date)}
-                  className={`hex-outer ${!isCurrentMonth(date) ? 'opacity-50' : ''} ${isToday(date) ? 'today' : ''}`}
-                >
-                  <div className="hex-inner">
-                    {date.getDate()}
+              {week.map((date, idx) => {
+                const isWeekendDate = isWeekend(date);
+                return (
+                  <div 
+                    key={idx} 
+                    onClick={() => handleDateClick(date)}
+                    className={`hex-outer ${!isCurrentMonth(date) ? 'opacity-50' : ''} ${
+                      isToday(date) ? 'today' : ''
+                    } ${
+                      isWeekendDate && isCurrentMonth(date) ? 'weekend' : ''
+                    }`}
+                  >
+                    <div className="hex-inner">
+                      {date.getDate()}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-7 text-base-content relative z-10">
+        <div className="grid grid-cols-7 text-base-content relative z-10 grid-view">
           {dates.map((date, idx) => {
             const holidayNames = hd ? isHoliday(date) : [];
 
             const cellClasses = [
               'relative border rounded-sm p-2 h-24 text-sm transition-transform hover:scale-105 hover:shadow-lg hover:z-10 cursor-pointer',
+              isToday(date) ? 'today border-neutral font-bold' : '',
               isCurrentMonth(date) ? 'bg-primary text-primary-content' : 'bg-accent text-accent-content opacity-50',
               isWeekend(date) && isCurrentMonth(date) ? 'bg-secondary text-secondary-content' : '',
               holidayNames.length > 0 && isCurrentMonth(date) ? 'bg-error text-error-content border-error font-semibold' : '',
-              isToday(date) ? 'border-neutral font-bold' : '',
             ].filter(Boolean).join(' ');
 
             return (
