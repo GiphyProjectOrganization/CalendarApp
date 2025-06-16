@@ -16,6 +16,7 @@ import { Footer } from './components/layout/Footer';
 import { EditProfile } from './components/profile/EditProfile';
 import EventPage from './pages/Events/EventPage';
 import { UserProfile } from './components/profile/UserProfile';
+import AdminDashboard from './pages/Admin/AdminDashboard';
 
 const ProtectedRoute = ({ children }) => {
   const { isLoggedIn } = useContext(AuthContext);
@@ -56,6 +57,14 @@ function App() {
             }
           />
           <Route path="/events/:eventId" element={<EventPage />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
       <Footer />
