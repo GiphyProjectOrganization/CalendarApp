@@ -62,8 +62,6 @@ export const eventService = {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
-        // TODO: Add authorization header when auth is implemented
-        // 'Authorization': `Bearer ${getAuthToken()}`
       },
       body: JSON.stringify(formattedEventData),
     });

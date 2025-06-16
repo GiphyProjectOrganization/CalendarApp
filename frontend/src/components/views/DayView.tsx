@@ -260,7 +260,7 @@ export const DayView = () => {
       </div>
 
       <div className="md:col-span-1">
-        {dayForecast && <WeatherCard day={dayForecast} unit={unit} />}
+        {dayForecast && <WeatherCard day={dayForecast} unit={unit} locationName={location.city} />}
         {!dayForecast && locationError && (
           <div className="alert alert-error shadow-md w-full">
             <svg

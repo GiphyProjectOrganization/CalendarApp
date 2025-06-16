@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { eventService, Event } from '../../services/eventService';
 import { AuthContext } from '../../components/contexts/authContext/authContext';
-import InfiniteScroll from 'react-infinite-scroll-component';
 import { STATIC_MAP_API_KEY } from '../../constants';
+import { DailyForecast } from '../../components/weather/WeateherCard';
+import { fetchWeatherForDate } from '../../services/weatherService';
+import { WeatherCard } from '../../components/weather/WeateherCard';
 
 const EventPage = () => {
   const { eventId } = useParams<{ eventId: string }>();
@@ -16,6 +18,9 @@ const EventPage = () => {
   const [showParticipants, setShowParticipants] = useState(false);
   const [allParticipants, setAllParticipants] = useState<string[]>([]);
   const [displayedParticipants, setDisplayedParticipants] = useState<string[]>([]);
+  const [weatherForecast, setWeatherForecast] = useState<DailyForecast | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [weatherUnit, setWeatherUnit] = useState<'metric' | 'imperial'>('metric');
   const participantsPerPage = 20;
 
   const getLocationDetails = (location: Event['location']) => {
@@ -28,6 +33,42 @@ const EventPage = () => {
     }
     return location;
   };
+
+  const locationDetails = event ? getLocationDetails(event.location) : {
+    address: '',
+    placeId: '',
+    coordinates: undefined
+  };
+
+  useEffect(() => {
+    if (!event || !locationDetails.coordinates) {
+      setWeatherLoading(false);
+      return;
+    }
+
+    const fetchWeather = async () => {
+      try {
+        const eventDate = new Date(`${event.startDate}T${event.startTime}`);
+        const fahrenheitCountries = ['US', 'BS', 'BZ', 'KY', 'PW'];
+        const unit = fahrenheitCountries.includes(event.location?.countryCode || '') ? 'imperial' : 'metric';
+        setWeatherUnit(unit);
+
+        const forecast = await fetchWeatherForDate(
+          locationDetails.coordinates.lat,
+          locationDetails.coordinates.lng,
+          eventDate,
+          unit
+        );
+        setWeatherForecast(forecast);
+      } catch (err) {
+        console.error('Failed to fetch weather:', err);
+      } finally {
+        setWeatherLoading(false);
+      }
+    };
+
+    fetchWeather();
+  }, [event, locationDetails.coordinates]);
 
   const calculateDuration = () => {
     if (!event) return { hours: 0, minutes: 0};
@@ -170,8 +211,6 @@ const EventPage = () => {
     );
   }
 
-  const locationDetails = getLocationDetails(event.location);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -187,22 +226,24 @@ const EventPage = () => {
             Back
           </button>
 
-          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">
-            {event.title}
-          </h1>
+          <div className="mb-4">
+            <div className="mb-1">
+              {event.isPublic ? (
+                <span className="badge bg-accent border-accent badge-success">Public</span>
+              ) : (
+                <span className="badge bg-accent border-accent badge-info">Private</span>
+              )}
+            </div>
 
-          <div className="flex flex-wrap gap-2 mb-6">
-            {event.isPublic ? (
-              <span className="badge bg-accent border-accent badge-success">Public</span>
-            ) : (
-              <span className="badge bg-accent border-accent badge-info">Private</span>
-            )}
-            {event.isDraft && (
-              <span className="badge badge-warning">Draft</span>
-            )}
-            {event.isRecurring && (
-              <span className="badge badge-secondary">Recurring</span>
-            )}
+            <h1 className="text-3xl font-bold">{event.title}</h1>
+
+            <div className="flex flex-wrap items-center gap-2 text-sm text-base-content/80 mt-2">
+              <span className="font-medium">Created by:</span>
+              <span className="text-primary font-semibold">{event.creatorUsername || 'Unknown'}</span>
+              <span className="text-base-content/50">|</span>
+              {event.isDraft && <span className="badge badge-warning">Draft</span>}
+              {event.isRecurring && <span className="badge badge-secondary">Recurring</span>}
+            </div>
           </div>
 
           <div className="prose max-w-none mb-8">
@@ -237,93 +278,119 @@ const EventPage = () => {
                   </div>
                 </div>
               </div>
-            </div>
 
-              <div className="col-span-full md:col-span-2">
-                <h2 className="text-xl font-semibold text-primary mb-4">Location</h2>
-                    {locationDetails.placeId && locationDetails.coordinates && (
-                      <div className="mt-4 flex justify-center">
-                        <div className="w-full max-w-3xl">                      <a 
-                          href={`https://www.google.com/maps/place/?q=place_id:${locationDetails.placeId}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="block"
-                        >
-                          <img
-                            src={`https://maps.googleapis.com/maps/api/staticmap?center=${locationDetails.coordinates.lat},${locationDetails.coordinates.lng}&zoom=15&size=800x350&maptype=roadmap&markers=color:red%7C${locationDetails.coordinates.lat},${locationDetails.coordinates.lng}&key=${STATIC_MAP_API_KEY}`}
-                            alt="Event location map"
-                            className="w-full h-auto rounded-xl border border-base-300 cursor-pointer hover:opacity-90 transition-opacity"
-                          />
-                          <p className="text-sm text-primary mt-1 hover:underline">View on Google Maps</p>
-                        </a>
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex items-start gap-4 mt-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <div>
-                    <p className="font-medium">{locationDetails.address || 'Location not specified'}</p>
-                  </div>
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-primary">
+                    Participants ({event.participants?.length || 0})
+                  </h3>
+                  <button 
+                    onClick={() => setShowParticipants(!showParticipants)}
+                    className="btn btn-xs btn-ghost bg-accent text-accent-content"
+                  >
+                    {showParticipants ? 'Hide' : 'Show'}
+                  </button>
                 </div>
+
+                {showParticipants && (
+                  <div className="bg-base-200 rounded-lg p-3 border border-base-300 max-h-64 overflow-y-auto">
+                    <ul className="space-y-2">
+                      {event.participants?.map((participant, index) => (
+                        <li 
+                          key={index} 
+                          className="flex items-center justify-between bg-base-100 p-2 rounded-md shadow-sm"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="avatar placeholder">
+                              <div className="bg-neutral text-neutral-content rounded-full w-8">
+                                <span className="text-xs">
+                                  {participant.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{participant}</p>
+                              <div className="flex gap-1 text-xs mt-0.5">
+                                {auth.userEmail === participant && (
+                                  <span className="badge badge-accent badge-xs">You</span>
+                                )}
+                                {event.creatorEmail === participant && (
+                                  <span className="badge badge-primary badge-xs">Creator</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          {auth.userId === event.createdBy && 
+                          participant !== event.creatorEmail && 
+                          participant !== auth.userEmail && (
+                              <button 
+                                className="btn btn-xs btn-ghost text-error"
+                                onClick={() => handleRemoveParticipant(participant)}
+                              >
+                                Remove
+                              </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="mb-8">
-            <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xl font-semibold text-primary">
-                Created By: {event.creatorUsername || 'Unknown'}
-                </h2>
-                <button 
-                onClick={() => setShowParticipants(!showParticipants)}
-                className="btn btn-sm btn-ghost"
-                >
-                {event.participants?.length || 0} Participants
-                {/* Chevron icon */}
-                </button>
+            <div>
+              <h2 className="text-xl font-semibold text-primary mb-4">Weather Forecast</h2>
+              <div className="border border-base-300 rounded-lg p-4 bg-base-200">
+                {weatherLoading ? (
+                  <div className="flex justify-center items-center min-h-[8rem]">
+                    <span className="loading loading-spinner loading-md text-primary" />
+                    <p className="ml-2">Loading weather...</p>
+                  </div>
+                ) : (
+                  <div className="scale-90 md:scale-100">
+                    <WeatherCard
+                      day={weatherForecast}
+                      unit={weatherUnit}
+                      locationName={typeof event.location === 'string' ? event.location : event.location.address}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
-            {showParticipants && (
-                <div className="bg-base-200 rounded-lg p-4 mt-2">
-                <ul className="space-y-2 max-h-96 overflow-y-auto">
-                    {event.participants?.map((participant, index) => (
-                    <li key={index} className="flex items-center justify-between bg-base-100 p-3 rounded">
-                        <div className="flex items-center gap-3">
-                        <div className="avatar placeholder">
-                            <div className="bg-neutral text-neutral-content rounded-full w-10">
-                            <span className="text-xs">
-                                {participant.charAt(0).toUpperCase()}
-                            </span>
-                            </div>
-                        </div>
-                        <div>
-                            <p className="font-medium">{participant}</p>
-                            {auth.userEmail === participant && (
-                            <span className="badge badge-accent badge-xs m-1">You</span>
-                            )}
-                            {event.creatorEmail === participant && (
-                            <span className="badge badge-primary badge-xs">Creator</span>
-                            )}
-                        </div>
-                        </div>
-                        {auth.userId === event.createdBy && 
-                        participant !== event.creatorEmail && 
-                        participant !== auth.userEmail && (
-                            <button 
-                                className="btn btn-xs btn-ghost text-error"
-                                onClick={() => handleRemoveParticipant(participant)}
-                            >
-                                Remove
-                            </button>
-                        )}
-                    </li>
-                    ))}
-                </ul>
+            <div className="md:col-span-2">
+              <h2 className="text-xl font-semibold text-primary mb-4">Location</h2>
+              <div className="flex items-start gap-4 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <div>
+                  <p className="font-medium">{locationDetails.address || 'Location not specified'}</p>
+                  {locationDetails.placeId && locationDetails.coordinates && (
+                    <a 
+                      href={`https://www.google.com/maps/place/?q=place_id:${locationDetails.placeId}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline mt-1 inline-block"
+                    >
+                      View on Google Maps
+                    </a>
+                  )}
                 </div>
-            )}
+              </div>
+
+              {locationDetails.placeId && locationDetails.coordinates && (
+                <div className="w-full h-64 rounded-xl overflow-hidden border border-base-300">
+                  <img
+                    src={`https://maps.googleapis.com/maps/api/staticmap?center=${locationDetails.coordinates.lat},${locationDetails.coordinates.lng}&zoom=15&size=800x350&maptype=roadmap&markers=color:red%7C${locationDetails.coordinates.lat},${locationDetails.coordinates.lng}&key=${STATIC_MAP_API_KEY}`}
+                    alt="Event location map"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
             </div>
+          </div>
 
           {event.tags && event.tags.length > 0 && (
             <div className="mb-8">
@@ -339,7 +406,7 @@ const EventPage = () => {
           )}
 
           <div className="flex flex-wrap gap-4 pt-4">
-            {auth.userEmail && auth.userEmail === auth.userEmail && (
+            {auth.userEmail && auth.userEmail === event.creatorEmail && (
               <>
                 <button className="btn btn-primary">Edit Event</button>
                 <button className="btn btn-error">Cancel Event</button>
@@ -348,10 +415,11 @@ const EventPage = () => {
             {auth.userEmail && !event.participants.includes(auth.userEmail) && (
               <button className="btn btn-accent">Join Event</button>
             )}
-            {auth.userEmail && event.participants.includes(auth.userEmail) && auth.userEmail !== auth.userEmail && (
+            {auth.userEmail && event.participants.includes(auth.userEmail) && auth.userEmail !== event.creatorEmail && (
               <button className="btn btn-error">Leave Event</button>
             )}
           </div>
+
         </div>
       </div>
     </div>

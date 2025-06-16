@@ -20,16 +20,18 @@ export interface DailyForecast {
 }
 
 interface WeatherCardProps {
-  day: DailyForecast;
+  day: DailyForecast | null;
   unit: "metric" | "imperial";
+  locationName: string;
 }
 
-export function WeatherCard({ day, unit }: WeatherCardProps) {
+export function WeatherCard({ day, unit, locationName }: WeatherCardProps) {
   if (!day) {
     return (
       <div className="card bg-base-100 shadow-md p-4 w-full">
         <div className="card-body text-base-content p-0">
-          Weather data not available for this day.
+          <h3 className="card-title">Weather Forecast</h3>
+            <p>Weather data not available for this day or location.</p>
         </div>
       </div>
     );
@@ -42,23 +44,16 @@ export function WeatherCard({ day, unit }: WeatherCardProps) {
     day: "numeric",
   });
 
-  const formatTime = (timestamp?: number) =>
-    timestamp
-      ? new Date(timestamp * 1000).toLocaleTimeString(undefined, {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "N/A";
-
   return (
     <div className="card bg-base-100 shadow-md p-4 w-full">
       <div className="card-body p-0">
-        <h3 className="card-title text-base-content mb-2">{weekday}</h3>
+        <h3 className="card-title text-base-content">Weather for {locationName}</h3>
+        <p className="text-sm text-base-content/60 ">{weekday}</p>
 
         <div className="flex items-center justify-between">
           <div>
             <p className="text-3xl font-bold">
-              {Math.round(day.temp.day)}°{unit === "metric" ? "C" : "F"}
+              {Math.round(day.temp.day)}°{unit === 'metric' ? 'C' : 'F'}
             </p>
             <p className="text-sm text-base-content/60">
               Min: {Math.round(day.temp.min)}°, Max: {Math.round(day.temp.max)}°
@@ -76,8 +71,12 @@ export function WeatherCard({ day, unit }: WeatherCardProps) {
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-base-content/80">
           <div><span className="font-semibold">UV Index:</span> {day.uvi ?? "N/A"}</div>
           <div><span className="font-semibold">Humidity:</span> {day.humidity ?? "N/A"}%</div>
-          <div><span className="font-semibold">Sunrise:</span> {formatTime(day.sunrise)}</div>
-          <div><span className="font-semibold">Sunset:</span> {formatTime(day.sunset)}</div>
+          <div><span className="font-semibold">Sunrise:</span> 
+            {day.sunrise ? new Date(day.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+          </div>
+          <div><span className="font-semibold">Sunset:</span> 
+            {day.sunset ? new Date(day.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+          </div>
         </div>
       </div>
     </div>
