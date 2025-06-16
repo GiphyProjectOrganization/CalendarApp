@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { eventService, Event } from '../../services/eventService';
 import { AuthContext } from '../../components/contexts/authContext/authContext';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { MAP_API_KEY } from '../../constants';
+import { STATIC_MAP_API_KEY } from '../../constants';
 
 const EventPage = () => {
   const { eventId } = useParams<{ eventId: string }>();
@@ -239,36 +239,37 @@ const EventPage = () => {
               </div>
             </div>
 
-            <div>
-              <h2 className="text-xl font-semibold text-primary mb-4">Location</h2>
-              <div className="flex items-start gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <div>
-                  <p className="font-medium">{locationDetails.address || 'Location not specified'}</p>
-                  {locationDetails.placeId && locationDetails.coordinates && (
-                    <div className="mt-3">
-                      <a 
-                        href={`https://www.google.com/maps/place/?q=place_id:${locationDetails.placeId}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
-                        <img
-                          src={`https://maps.googleapis.com/maps/api/staticmap?center=${locationDetails.coordinates.lat},${locationDetails.coordinates.lng}&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C${locationDetails.coordinates.lat},${locationDetails.coordinates.lng}&key=${MAP_API_KEY}`}
-                          alt="Event location map"
-                          className="w-full h-auto rounded-lg border border-base-300 cursor-pointer hover:opacity-90 transition-opacity"
-                        />
-                        <p className="text-sm text-primary mt-1 hover:underline">View on Google Maps</p>
-                      </a>
-                    </div>
-                  )}
+              <div className="col-span-full md:col-span-2">
+                <h2 className="text-xl font-semibold text-primary mb-4">Location</h2>
+                    {locationDetails.placeId && locationDetails.coordinates && (
+                      <div className="mt-4 flex justify-center">
+                        <div className="w-full max-w-3xl">                      <a 
+                          href={`https://www.google.com/maps/place/?q=place_id:${locationDetails.placeId}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="block"
+                        >
+                          <img
+                            src={`https://maps.googleapis.com/maps/api/staticmap?center=${locationDetails.coordinates.lat},${locationDetails.coordinates.lng}&zoom=15&size=800x350&maptype=roadmap&markers=color:red%7C${locationDetails.coordinates.lat},${locationDetails.coordinates.lng}&key=${STATIC_MAP_API_KEY}`}
+                            alt="Event location map"
+                            className="w-full h-auto rounded-xl border border-base-300 cursor-pointer hover:opacity-90 transition-opacity"
+                          />
+                          <p className="text-sm text-primary mt-1 hover:underline">View on Google Maps</p>
+                        </a>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-start gap-4 mt-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <div>
+                    <p className="font-medium">{locationDetails.address || 'Location not specified'}</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
             <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
