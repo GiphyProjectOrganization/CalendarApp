@@ -11,7 +11,8 @@ const app = express();
 const PORT = 5000;
 
 app.use(cors());
-app.use(express.json({ limit: '1mb' }));
+//changed to 2mb bc when encoded to Base64, the encoded version can exceed 1mb; the components accept up to 1mb still
+app.use(express.json({ limit: '2mb' })); 
 
 app.get("/api/hello", async (_req, res) => {
   res.json({ message: "Hello from TypeScript Express backend!" });
@@ -83,6 +84,21 @@ export interface Event {
   creatorEmail?: string;
 }
 
+export interface Contact {
+  userId: ObjectId; 
+  owner: ObjectId;
+  addedAt: Date;
+  lists: ObjectId[];
+}
+
+export interface ContactList {
+  _id?: ObjectId;
+  owner: ObjectId;
+  name: string;
+  isDefault: boolean; //default lists (family, friends, work)
+  createdAt: Date;
+}
+
 app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res: Response): Promise<void> => {
   const { username, firstName, lastName, password, phoneNumber, email, photoBase64 } = req.body;
 
@@ -99,7 +115,7 @@ app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res:
   }
 
   if (username.length < 3 || username.length >= 30) {
-    res.status(400).json({ message: "Username must be between 3 and 30 character!" });
+    res.status(400).json({ message: "Username must be between 3 and 30 characters!" });
     return;
   }
   if (!/\d/.test(password) || !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
@@ -107,15 +123,15 @@ app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res:
     return;
   }
   if (firstName.length < 1 || firstName.length >= 30 || !/^[A-Za-z]+$/.test(firstName)) {
-    res.status(400).json({ message: "First name must be between 1 and 30 character and include only uppercase and lowercase letters!" });
+    res.status(400).json({ message: "First name must be between 1 and 30 characters and include only letters!" });
     return;
   }
   if (lastName.length < 1 || lastName.length >= 30 || !/^[A-Za-z]+$/.test(lastName)) {
-    res.status(400).json({ message: "last name must be between 1 and 30 character and include only uppercase and lowercase letters!" });
+    res.status(400).json({ message: "Last name must be between 1 and 30 characters and include only letters!" });
     return;
   }
   if (phoneNumber.length !== 10 || !/^\d+$/.test(phoneNumber)) {
-    res.status(400).json({ message: "Phone Number must be 10 digits and include only numbers!" });
+    res.status(400).json({ message: "Phone number must be 10 digits and include only numbers!" });
     return;
   }
 
@@ -153,30 +169,65 @@ app.post("/api/register", async (req: Request<{}, {}, RegisterRequestBody>, res:
       photoBase64
     };
 
-    await usersCollection.insertOne(newUser);
+    const session = client.startSession();
+    try {
+      await session.withTransaction(async () => {
+        const insertResult = await usersCollection.insertOne(newUser, { session });
+        const insertedUserId = insertResult.insertedId;
 
-    const insertedUser = await usersCollection.findOne({ email });
+        if (!insertedUserId) {
+          throw new Error("User registration failed");
+        }
 
-    if (!insertedUser) {
-      res.status(500).json({ message: "User registration failed." });
-      return;
+        const contactListsCollection = db.collection<ContactList>("contactLists");
+        await contactListsCollection.insertMany([
+          {
+            owner: insertedUserId,
+            name: "Family",
+            isDefault: true,
+            createdAt: new Date()
+          },
+          {
+            owner: insertedUserId,
+            name: "Friends",
+            isDefault: true,
+            createdAt: new Date()
+          },
+          {
+            owner: insertedUserId,
+            name: "Work",
+            isDefault: true,
+            createdAt: new Date()
+          }
+        ], { session });
+
+        const token = jwt.sign(
+          { userId: insertedUserId.toString(), email: newUser.email },
+          'secret_token_do_not_share',
+          { expiresIn: '1h' }
+        );
+
+        const insertedUser = await usersCollection.findOne(
+          { _id: insertedUserId },
+          { projection: { password: 0 }, session }
+        );
+
+        if (!insertedUser) {
+          throw new Error("Failed to retrieve created user");
+        }
+
+        res.status(201).json({
+          userId: insertedUser._id.toString(),
+          email: insertedUser.email,
+          profilePhoto: insertedUser.photoBase64,
+          token,
+          isAdmin: insertedUser.isAdmin,
+          isBlocked: insertedUser.isBlocked
+        });
+      });
+    } finally {
+      await session.endSession();
     }
-
-    const token = jwt.sign(
-      { userId: insertedUser._id.toString(), email: newUser.email },
-      'secret_token_do_not_share',
-      { expiresIn: '1h' }
-    );
-
-    res.status(201).json({
-      userId: insertedUser._id.toString(),
-      email: insertedUser.email,
-      profilePhoto: insertedUser.photoBase64,
-      token,
-      isAdmin: insertedUser.isAdmin,
-      isBlocked: insertedUser.isBlocked
-    });
-    return;
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -617,5 +668,488 @@ app.get("/api/users/:userId", async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Failed to fetch user:", err);
     res.status(500).json({ message: "Failed to fetch user" });
+  }
+});
+
+app.get("/api/contact-lists", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const contactListsCollection = db.collection<ContactList>("contactLists");
+    const userObjectId = new ObjectId(req.userId);
+
+    const contactLists = await contactListsCollection.find({
+      owner: userObjectId
+    }).toArray();
+
+    res.status(200).json(contactLists.map(list => ({
+      id: list._id?.toString(),
+      name: list.name,
+      isDefault: list.isDefault,
+      createdAt: list.createdAt
+    })));
+  } catch (err) {
+    console.error("Failed to fetch contact lists:", err);
+    res.status(500).json({ message: "Failed to fetch contact lists" });
+  }
+});
+
+// Create a new contact list
+app.post("/api/contact-lists", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const { name } = req.body;
+    if (!name?.trim()) {
+      res.status(400).json({ message: "List name is required" });
+      return;
+    }
+
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const contactListsCollection = db.collection<ContactList>("contactLists");
+    const userObjectId = new ObjectId(req.userId);
+
+    const existingList = await contactListsCollection.findOne({
+      owner: userObjectId,
+      name: name.trim()
+    });
+
+    if (existingList) {
+      res.status(409).json({ message: "You already have a list with this name" });
+      return;
+    }
+
+    const newList: ContactList = {
+      owner: userObjectId,
+      name: name.trim(),
+      isDefault: false,
+      createdAt: new Date()
+    };
+
+    const result = await contactListsCollection.insertOne(newList);
+
+    res.status(201).json({
+      id: result.insertedId.toString(),
+      name: newList.name,
+      isDefault: newList.isDefault,
+      createdAt: newList.createdAt
+    });
+  } catch (err) {
+    console.error("Failed to create contact list:", err);
+    res.status(500).json({ message: "Failed to create contact list" });
+  }
+});
+
+app.delete("/api/contact-lists/:listId", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const { listId } = req.params;
+    if (!ObjectId.isValid(listId)) {
+      res.status(400).json({ message: "Invalid list ID format" });
+      return;
+    }
+
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const contactListsCollection = db.collection<ContactList>("contactLists");
+    const contactsCollection = db.collection<Contact>("contacts");
+
+    const list = await contactListsCollection.findOne({
+      _id: new ObjectId(listId),
+      owner: new ObjectId(req.userId)
+    });
+
+    if (!list) {
+      res.status(404).json({ message: "List not found" });
+      return;
+    }
+
+    if (list.isDefault) {
+      res.status(400).json({ message: "Cannot delete default lists" });
+      return;
+    }
+
+    await contactsCollection.updateMany(
+      { lists: new ObjectId(listId) },
+      { $pull: { lists: new ObjectId(listId) } }
+    );
+
+    await contactListsCollection.deleteOne({ _id: new ObjectId(listId) });
+
+    res.status(200).json({ message: "Contact list deleted successfully" });
+  } catch (err) {
+    console.error("Failed to delete contact list:", err);
+    res.status(500).json({ message: "Failed to delete contact list" });
+  }
+});
+
+// Add a contact to the user's main list and optionally to specific lists
+app.post("/api/contacts", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const { userId: contactUserId, listIds } = req.body;
+    
+    if (!ObjectId.isValid(contactUserId)) {
+      res.status(400).json({ message: "Invalid user ID format" });
+      return;
+    }
+
+    if (req.userId === contactUserId) {
+      res.status(400).json({ message: "Cannot add yourself as a contact" });
+      return;
+    }
+
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const usersCollection = db.collection<User>("users");
+    const contactsCollection = db.collection<Contact>("contacts");
+    const contactListsCollection = db.collection<ContactList>("contactLists");
+    const userObjectId = new ObjectId(req.userId);
+
+    const contactUser = await usersCollection.findOne({
+      _id: new ObjectId(contactUserId)
+    });
+
+    if (!contactUser) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    // lists exist and belong to the user
+    if (listIds && Array.isArray(listIds)) {
+      for (const listId of listIds) {
+        if (!ObjectId.isValid(listId)) {
+          res.status(400).json({ message: "Invalid list ID format" });
+          return;
+        }
+
+        const list = await contactListsCollection.findOne({
+          _id: new ObjectId(listId),
+          owner: userObjectId
+        });
+
+        if (!list) {
+          res.status(404).json({ message: `List ${listId} not found` });
+          return;
+        }
+      }
+    }
+
+    const existingContact = await contactsCollection.findOne({
+      userId: new ObjectId(contactUserId),
+      owner: userObjectId
+    });
+
+    if (existingContact) {
+      if (listIds && Array.isArray(listIds)) {
+        const updatedLists = [...new Set([
+          ...existingContact.lists.map(id => id.toString()),
+          ...listIds
+        ])].map(id => new ObjectId(id));
+
+        await contactsCollection.updateOne(
+          { _id: existingContact._id },
+          { $set: { lists: updatedLists } }
+        );
+      }
+
+      res.status(200).json({ message: "Contact updated successfully" });
+      return;
+    }
+
+    const newContact: Contact = {
+      userId: new ObjectId(contactUserId),
+      owner: userObjectId,
+      addedAt: new Date(),
+      lists: listIds && Array.isArray(listIds) 
+        ? listIds.map(id => new ObjectId(id)) 
+        : []
+    };
+
+    await contactsCollection.insertOne(newContact);
+
+    res.status(201).json({ message: "Contact added successfully" });
+  } catch (err) {
+    console.error("Failed to add contact:", err);
+    res.status(500).json({ message: "Failed to add contact" });
+  }
+});
+
+app.get("/api/contacts", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const contactsCollection = db.collection<Contact>("contacts");
+    const usersCollection = db.collection<User>("users");
+
+    const contacts = await contactsCollection.find({
+      owner: new ObjectId(req.userId)
+    }).toArray();
+
+    const contactDetails = await Promise.all(
+      contacts.map(async contact => {
+        const user = await usersCollection.findOne(
+          { _id: contact.userId },
+          {
+            projection: {
+              _id: 1,
+              firstName: 1,
+              lastName: 1,
+              email: 1,
+              phoneNumber: 1,
+              photoBase64: 1
+            }
+          }
+        );
+
+        return {
+          id: contact._id?.toString(),
+          userId: user?._id.toString(),
+          name: user ? `${user.firstName} ${user.lastName}` : "Unknown",
+          email: user?.email,
+          phoneNumber: user?.phoneNumber,
+          photoBase64: user?.photoBase64,
+          addedAt: contact.addedAt,
+          lists: contact.lists.map(id => id.toString())
+        };
+      })
+    );
+
+    res.status(200).json(contactDetails);
+  } catch (err) {
+    console.error("Failed to fetch contacts:", err);
+    res.status(500).json({ message: "Failed to fetch contacts" });
+  }
+});
+
+app.delete("/api/contacts/:contactId", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const { contactId } = req.params;
+    const { listId } = req.query; 
+
+    if (!ObjectId.isValid(contactId)) {
+      res.status(400).json({ message: "Invalid contact ID format" });
+      return;
+    }
+
+    if (listId && !ObjectId.isValid(listId as string)) {
+      res.status(400).json({ message: "Invalid list ID format" });
+      return;
+    }
+
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const contactsCollection = db.collection<Contact>("contacts");
+
+    const contact = await contactsCollection.findOne({
+      _id: new ObjectId(contactId),
+      owner: new ObjectId(req.userId)
+    });
+
+    if (!contact) {
+      res.status(404).json({ message: "Contact not found" });
+      return;
+    }
+
+    if (listId) {
+      const result = await contactsCollection.updateOne(
+        { _id: new ObjectId(contactId) },
+        { $pull: { lists: new ObjectId(listId as string) } }
+      );
+
+      if (result.modifiedCount === 0) {
+        res.status(404).json({ message: "Contact not in specified list" });
+        return;
+      }
+
+      const updatedContact = await contactsCollection.findOne({
+        _id: new ObjectId(contactId)
+      });
+
+      if (updatedContact && updatedContact.lists.length === 0) {
+        await contactsCollection.deleteOne({ _id: new ObjectId(contactId) });
+      }
+
+      res.status(200).json({ message: "Contact removed from list" });
+    } else {
+      await contactsCollection.deleteOne({ _id: new ObjectId(contactId) });
+      res.status(200).json({ message: "Contact removed successfully" });
+    }
+  } catch (err) {
+    console.error("Failed to remove contact:", err);
+    res.status(500).json({ message: "Failed to remove contact" });
+  }
+});
+
+app.get("/api/contact-lists/:listId/contacts", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const { listId } = req.params;
+    if (!ObjectId.isValid(listId)) {
+      res.status(400).json({ message: "Invalid list ID format" });
+      return;
+    }
+
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const contactListsCollection = db.collection<ContactList>("contactLists");
+    const contactsCollection = db.collection<Contact>("contacts");
+    const usersCollection = db.collection<User>("users");
+
+    // Verify list exists and belongs to user
+    const list = await contactListsCollection.findOne({
+      _id: new ObjectId(listId),
+      owner: new ObjectId(req.userId)
+    });
+
+    if (!list) {
+      res.status(404).json({ message: "List not found" });
+      return;
+    }
+
+    // Find all contacts that include this list in their lists array
+    const contacts = await contactsCollection.find({
+      owner: new ObjectId(req.userId),
+      lists: new ObjectId(listId)
+    }).toArray();
+
+    // Get user details for each contact
+    const contactDetails = await Promise.all(
+      contacts.map(async contact => {
+        const user = await usersCollection.findOne(
+          { _id: contact.userId },
+          {
+            projection: {
+              _id: 1,
+              firstName: 1,
+              lastName: 1,
+              email: 1,
+              phoneNumber: 1,
+              photoBase64: 1
+            }
+          }
+        );
+
+        return {
+          id: contact._id?.toString(),
+          userId: user?._id.toString(),
+          name: user ? `${user.firstName} ${user.lastName}` : "Unknown",
+          email: user?.email,
+          phoneNumber: user?.phoneNumber,
+          photoBase64: user?.photoBase64,
+          addedAt: contact.addedAt
+        };
+      })
+    );
+
+    res.status(200).json({
+      list: {
+        id: list._id?.toString(),
+        name: list.name,
+        isDefault: list.isDefault
+      },
+      contacts: contactDetails
+    });
+  } catch (err) {
+    console.error("Failed to fetch contacts for list:", err);
+    res.status(500).json({ message: "Failed to fetch contacts for list" });
+  }
+});
+
+app.put("/api/contacts/:contactId/lists", authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const { contactId } = req.params;
+    const { listIds } = req.body;
+
+    if (!ObjectId.isValid(contactId)) {
+      res.status(400).json({ message: "Invalid contact ID format" });
+      return;
+    }
+
+    if (!Array.isArray(listIds)) {
+      res.status(400).json({ message: "listIds must be an array" });
+      return;
+    }
+
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const contactsCollection = db.collection<Contact>("contacts");
+    const contactListsCollection = db.collection<ContactList>("contactLists");
+    const userObjectId = new ObjectId(req.userId);
+
+    for (const listId of listIds) {
+      if (!ObjectId.isValid(listId)) {
+        res.status(400).json({ message: "Invalid list ID format" });
+        return;
+      }
+
+      const list = await contactListsCollection.findOne({
+        _id: new ObjectId(listId),
+        owner: userObjectId
+      });
+
+      if (!list) {
+        res.status(404).json({ message: `List ${listId} not found` });
+        return;
+      }
+    }
+
+    const result = await contactsCollection.updateOne(
+      {
+        _id: new ObjectId(contactId),
+        owner: userObjectId
+      },
+      {
+        $set: {
+          lists: listIds.map(id => new ObjectId(id))
+        }
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      res.status(404).json({ message: "Contact not found" });
+      return;
+    }
+
+    res.status(200).json({ message: "Contact lists updated successfully" });
+  } catch (err) {
+    console.error("Failed to update contact lists:", err);
+    res.status(500).json({ message: "Failed to update contact lists" });
   }
 });
