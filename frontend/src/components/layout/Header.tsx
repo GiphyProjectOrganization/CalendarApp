@@ -108,7 +108,7 @@ export function Header() {
 
             {!isSearching && searchResults.length > 0 && (
               <ul
-                className="menu menu-sm mt-2 max-h-64 overflow-y-auto flex flex-col gap-1"
+                className=" mt-2 max-h-64 overflow-y-auto flex flex-col gap-1"
                 style={{ minWidth: "16rem" }}
               >
                 {searchResults.map(user => (
