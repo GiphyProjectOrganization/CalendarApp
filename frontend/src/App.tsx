@@ -16,7 +16,7 @@ import { Footer } from './components/layout/Footer';
 import { EditProfile } from './components/profile/EditProfile';
 import EventPage from './pages/Events/EventPage';
 import { UserProfile } from './components/profile/UserProfile';
-import AdminDashboard from './pages/Admin/AdminDashboard';
+import AdminDashboard from './pages/Admin/Dashboard';
 
 const ProtectedRoute = ({ children }) => {
   const { isLoggedIn } = useContext(AuthContext);
