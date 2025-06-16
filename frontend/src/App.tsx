@@ -35,7 +35,9 @@ function App() {
   return (
     <AuthContext.Provider value={{ isLoggedIn: !!token, userId, userEmail, token, login, logout, profilePhoto, isAdmin, isBlocked }}>
       <BrowserRouter>
-        <Header />
+        <Header onMenuClick={function (): void {
+          throw new Error('Function not implemented.');
+        }} />
         <Routes>
           <Route path='/register' element={<Register />} />
           <Route path='/' element={<MonthView />} />

@@ -18,6 +18,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchType, setSearchType] = useState<"users" | "events">("users");
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   //backend
@@ -41,22 +42,33 @@ export function Header({ onMenuClick }: HeaderProps) {
     searchTimeout.current = setTimeout(async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(
-          `http://localhost:5000/api/users/lookup?query=${encodeURIComponent(value)}`,
-          {
-            headers: {
-              "Authorization": token ? `Bearer ${token}` : "",
-            },
-          }
-        );
-        if (!res.ok) {
-          throw new Error("Failed to search users");
+        let res, data;
+        if (searchType === "users") {
+          res = await fetch(
+            `http://localhost:5000/api/users/lookup?query=${encodeURIComponent(value)}`,
+            {
+              headers: {
+                "Authorization": token ? `Bearer ${token}` : "",
+              },
+            }
+          );
+          if (!res.ok) throw new Error("Failed to search users");
+          data = await res.json();
+        } else {
+          res = await fetch(
+            `http://localhost:5000/api/events`
+          );
+          if (!res.ok) throw new Error("Failed to search events");
+          const allEvents = await res.json();
+          data = allEvents.filter(event =>
+            event.title?.toLowerCase().includes(value.toLowerCase()) ||
+            event.description?.toLowerCase().includes(value.toLowerCase())
+          );
         }
-        const data = await res.json();
         setSearchResults(data);
         setIsSearching(false);
       } catch (err) {
-        setSearchError("Error searching users");
+        setSearchError("Error searching " + searchType);
         setIsSearching(false);
       }
     }, 300);
@@ -97,12 +109,36 @@ export function Header({ onMenuClick }: HeaderProps) {
           <div tabIndex={0} className="dropdown-content z-[1] p-2 shadow bg-base-100 rounded-box w-72 mt-2">
             <input
               type="text"
-              placeholder="Search users..."
+              placeholder={`Search ${searchType}...`}
               className="input input-bordered w-full"
               value={searchQuery}
               onChange={handleSearchChange}
               autoComplete="off"
             />
+            <div className="flex gap-4 mt-2 mb-2 justify-center">
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input
+                  type="radio"
+                  name="searchType"
+                  value="users"
+                  checked={searchType === "users"}
+                  onChange={() => setSearchType("users")}
+                  className="radio radio-xs"
+                />
+                <span className="text-xs">Users</span>
+              </label>
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input
+                  type="radio"
+                  name="searchType"
+                  value="events"
+                  checked={searchType === "events"}
+                  onChange={() => setSearchType("events")}
+                  className="radio radio-xs"
+                />
+                <span className="text-xs">Events</span>
+              </label>
+            </div>
 
             {isSearching && (
               <div className="mt-2 text-center text-xs text-gray-500">Searching...</div>
@@ -118,7 +154,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                 className=" mt-2 max-h-64 overflow-y-auto flex flex-col gap-1"
                 style={{ minWidth: "16rem" }}
               >
-                {searchResults.map(user => (
+                {searchType === "users" && searchResults.map(user => (
                   <li
                     key={user.id}
                     className="flex flex-col items-start py-2 px-2 hover:bg-primary hover:text-primary-content transition-colors cursor-pointer"
@@ -140,6 +176,21 @@ export function Header({ onMenuClick }: HeaderProps) {
                         <span className="text-xs">{user.phoneNumber}</span>
                       </button>
                     </div>
+                  </li>
+                ))}
+                {searchType === "events" && searchResults.map(event => (
+                  <li
+                    key={event.id}
+                    className="flex flex-col items-start py-2 px-2 hover:bg-primary hover:text-primary-content transition-colors cursor-pointer"
+                  >
+                    <button
+                      className="flex flex-col w-full text-left"
+                      onClick={() => navigate(`/events/${event.id}`)}
+                    >
+                      <span className="font-semibold text-base">{event.title}</span>
+                      <span className="text-xs">{event.description}</span>
+                      <span className="text-xs">{event.startDate} {event.startTime}</span>
+                    </button>
                   </li>
                 ))}
               </ul>
