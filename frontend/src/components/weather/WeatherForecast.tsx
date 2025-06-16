@@ -30,7 +30,6 @@ export function WeatherForecast() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('UserLocation:', location);
     if (!location.lat || !location.lon || !location.countryCode) return;
 
     const fahrenheitCountries = ['US', 'BS', 'BZ', 'KY', 'PW'];
@@ -40,7 +39,6 @@ export function WeatherForecast() {
     fetch(`${WEATHER_API_URL}/onecall?lat=${location.lat}&lon=${location.lon}&exclude=minutely,hourly,alerts&units=${userUnit}&appid=${WEATHER_API_KEY}`)
       .then(res => res.json())
       .then(data => {
-        console.log('Weather API response:', data);
         setForecast(data.daily ? data.daily.slice(0, 7) : []);
         setCurrentWeather(data.current || null);
       })

@@ -118,16 +118,13 @@ const EventPage = () => {
 
     useEffect(() => {
         const fetchEvent = async () => {
-            console.log('Fetching event with ID:', eventId); 
             setIsLoading(true); 
             try {
             const response = await fetch(`http://localhost:5000/api/events/${eventId}`);
-            console.log('Response status:', response.status);
             
             if (!response.ok) throw new Error('Failed to fetch');
             
             const eventData = await response.json();
-            console.log('Event data:', eventData);
             
             setEvent(eventData);
             setAllParticipants(eventData.participants || []);
