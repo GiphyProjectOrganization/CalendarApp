@@ -17,6 +17,7 @@ import { EditProfile } from './components/profile/EditProfile';
 import EventPage from './pages/Events/EventPage';
 import { UserProfile } from './components/profile/UserProfile';
 import AdminDashboard from './pages/Admin/Dashboard';
+import ContactsView from './components/contacts/ContactsView';
 
 const ProtectedRoute = ({ children }) => {
   const { isLoggedIn } = useContext(AuthContext);
@@ -56,6 +57,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/contacts" element={<ContactsView />} />
           <Route path="/events/:eventId" element={<EventPage />} />
           <Route
             path="/admin"

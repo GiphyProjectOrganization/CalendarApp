@@ -6,12 +6,14 @@ import { WeatherForecast } from "../weather/WeatherForecast";
 import { AuthContext } from "../contexts/authContext/authContext";
 import './Header.css';
 import { useAuth } from "../../hook/auth-hook";
-import { FaUserCircle } from "react-icons/fa";
+import { FiMenu, FiPlus, FiUsers } from 'react-icons/fi';
+interface HeaderProps {
+  onMenuClick: () => void;
+}
 
-export function Header() {
+export function Header({ onMenuClick }: HeaderProps) {
   const { isLoggedIn, logout, profilePhoto } = useContext(AuthContext);
   const navigate = useNavigate();
-
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -63,7 +65,12 @@ export function Header() {
   return (
     <div className="navbar bg-base-100 shadow-md">
       <div className="navbar-start">
-        <Link to="/" className="font-cubao mr-1">TimeBuddy</Link>
+        {isLoggedIn && (
+          <label htmlFor="sidebar-toggle" className="btn btn-ghost btn-circle lg:hidden">
+            <FiMenu className="w-5 h-5" />
+          </label>
+        )}
+        <Link to="/" className="font-cubao ml-2">TimeBuddy</Link>
         <ThemeSwap />
       </div>
 

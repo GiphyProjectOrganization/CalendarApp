@@ -37,7 +37,9 @@ export function useAuth(): AuthHook {
         setUserId(uid);
         setUserEmail(email);
         setProfilePhoto(profilePhoto || null);
-        const expiration = expirationDate || new Date(new Date().getTime() + 1000 * 60 * 60);
+        const expiration = expirationDate instanceof Date
+          ? expirationDate
+          : new Date(new Date().getTime() + 1000 * 60 * 60);
         setTokenExpirationTime(expiration);
         localStorage.setItem(
             'userData',

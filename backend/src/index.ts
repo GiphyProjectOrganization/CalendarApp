@@ -569,7 +569,7 @@ app.patch("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response
   }
 }),
 
-  app.get("/api/users/lookup", authMiddleware, (async (req, res, next) => {
+app.get("/api/users/lookup", authMiddleware, (async (req, res, next) => {
     try {
       const authReq = req as AuthRequest;
       const { query } = req.query;
@@ -628,7 +628,7 @@ app.patch("/api/user/me", authMiddleware, async (req: AuthRequest, res: Response
       return next(err);
     }
   }) as RequestHandler
-  );
+);
 
 // GET user by ID (public access)
 app.get("/api/users/:userId", async (req: Request, res: Response) => {
