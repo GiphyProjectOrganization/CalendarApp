@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import { Request, Response, RequestHandler, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { ObjectId, WithId, Document } from "mongodb";
-import { authMiddleware, AuthRequest } from "./middleware/auth"
+import { authMiddleware, adminMiddleware, AuthRequest } from "./middleware/auth"
 
 const app = express();
 const PORT = 5000;
@@ -1151,5 +1151,184 @@ app.put("/api/contacts/:contactId/lists", authMiddleware, async (req: AuthReques
   } catch (err) {
     console.error("Failed to update contact lists:", err);
     res.status(500).json({ message: "Failed to update contact lists" });
+  }
+});
+
+app.get('/api/admin/users', adminMiddleware, async (req, res) => {
+  const { query = '', page = 1, limit = 10 } = req.query;
+  
+  try {
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const usersCollection = db.collection("users");
+    
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const searchFilter = query ? {
+      $or: [
+        { username: { $regex: query, $options: 'i' } },
+        { firstName: { $regex: query, $options: 'i' } },
+        { lastName: { $regex: query, $options: 'i' } },
+        { email: { $regex: query, $options: 'i' } }
+      ]
+    } : {};
+    
+    const totalCount = await usersCollection.countDocuments(searchFilter);
+    const users = await usersCollection
+      .find(searchFilter, { projection: { password: 0 } }) // Don't return passwords
+      .skip(skip)
+      .limit(parseInt(limit as string))
+      .toArray();
+    
+    const totalPages = Math.ceil(totalCount / parseInt(limit as string));
+    const currentPage = parseInt(page as string);
+    
+    // Map MongoDB _id to id for frontend compatibility
+    const formattedUsers = users.map(user => ({
+      id: user._id.toString(),
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      isBlocked: user.isBlocked || false,
+      createdAt: user.createdAt || new Date().toISOString(),
+      profilePhoto: user.photoBase64,
+      address: user.address
+    }));
+    
+    res.json({
+      data: formattedUsers,
+      totalCount,
+      currentPage,
+      totalPages,
+      hasNextPage: currentPage < totalPages,
+      hasPreviousPage: currentPage > 1
+    });
+  } catch (error) {
+    console.error('Failed to fetch users:', error);
+    res.status(500).json({ message: 'Failed to fetch users' });
+  }
+});
+
+app.put('/api/admin/users/:userId/block', adminMiddleware, async (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const usersCollection = db.collection("users");
+    
+    await usersCollection.updateOne(
+      { _id: new ObjectId(userId) },
+      { $set: { isBlocked: true, updatedAt: new Date().toISOString() } }
+    );
+    
+    res.json({ message: 'User blocked successfully' });
+  } catch (error) {
+    console.error('Failed to block user:', error);
+    res.status(500).json({ message: 'Failed to block user' });
+  }
+});
+
+app.put('/api/admin/users/:userId/unblock', adminMiddleware, async (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const usersCollection = db.collection("users");
+    
+    await usersCollection.updateOne(
+      { _id: new ObjectId(userId) },
+      { $set: { isBlocked: false, updatedAt: new Date().toISOString() } }
+    );
+    
+    res.json({ message: 'User unblocked successfully' });
+  } catch (error) {
+    console.error('Failed to unblock user:', error);
+    res.status(500).json({ message: 'Failed to unblock user' });
+  }
+});
+
+app.get('/api/admin/events', adminMiddleware, async (req, res) => {
+  const { query = '', page = 1, limit = 10 } = req.query;
+  
+  try {
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const eventsCollection = db.collection("events");
+    
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const searchFilter = query ? {
+      title: { $regex: query, $options: 'i' }
+    } : {};
+    
+    const totalCount = await eventsCollection.countDocuments(searchFilter);
+    const events = await eventsCollection
+      .find(searchFilter)
+      .skip(skip)
+      .limit(parseInt(limit as string))
+      .sort({ createdAt: -1 })
+      .toArray();
+    
+    const totalPages = Math.ceil(totalCount / parseInt(limit as string));
+    const currentPage = parseInt(page as string);
+    
+    res.json({
+      data: events,
+      totalCount,
+      currentPage,
+      totalPages,
+      hasNextPage: currentPage < totalPages,
+      hasPreviousPage: currentPage > 1
+    });
+  } catch (error) {
+    console.error('Failed to fetch events:', error);
+    res.status(500).json({ message: 'Failed to fetch events' });
+  }
+});
+
+app.delete('/api/admin/events/:eventId', adminMiddleware, async (req, res) => {
+  const { eventId } = req.params;
+  
+  try {
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const eventsCollection = db.collection("events");
+    
+    const result = await eventsCollection.deleteOne({ _id: new ObjectId(eventId) });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+    
+    res.json({ message: 'Event deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete event:', error);
+    res.status(500).json({ message: 'Failed to delete event' });
+  }
+});
+
+app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
+  try {
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const usersCollection = db.collection("users");
+    const eventsCollection = db.collection("events");
+
+    const totalUsers = await usersCollection.countDocuments();
+    const totalEvents = await eventsCollection.countDocuments();
+    const draftEvents = await eventsCollection.countDocuments({ isDraft: true });
+    const publicEvents = await eventsCollection.countDocuments({ isPublic: true });
+
+    res.json({
+      totalUsers,
+      totalEvents,
+      draftEvents,
+      publicEvents
+    });
+  } catch (error) {
+    console.error('Failed to fetch system stats:', error);
+    res.status(500).json({ message: 'Failed to fetch system stats' });
   }
 });
