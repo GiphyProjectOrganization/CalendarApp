@@ -60,15 +60,15 @@ export interface Event {
   endDate: string;
   endTime: string;
   location:
-    | {
-        placeId: string;
-        address: string;
-        coordinates?: {
-          lat: number;
-          lng: number;
-        };
-      }
-    | string;
+  | {
+    placeId: string;
+    address: string;
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
+  }
+  | string;
   isPublic: boolean;
   isDraft: boolean;
   tags: string[];
@@ -1407,13 +1407,13 @@ app.get('/api/admin/users', adminMiddleware, async (req, res) => {
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
     const searchFilter = query
       ? {
-          $or: [
-            { username: { $regex: query, $options: 'i' } },
-            { firstName: { $regex: query, $options: 'i' } },
-            { lastName: { $regex: query, $options: 'i' } },
-            { email: { $regex: query, $options: 'i' } },
-          ],
-        }
+        $or: [
+          { username: { $regex: query, $options: 'i' } },
+          { firstName: { $regex: query, $options: 'i' } },
+          { lastName: { $regex: query, $options: 'i' } },
+          { email: { $regex: query, $options: 'i' } },
+        ],
+      }
       : {};
 
     const totalCount = await usersCollection.countDocuments(searchFilter);
@@ -1509,8 +1509,8 @@ app.get('/api/admin/events', adminMiddleware, async (req, res) => {
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
     const searchFilter = query
       ? {
-          title: { $regex: query, $options: 'i' },
-        }
+        title: { $regex: query, $options: 'i' },
+      }
       : {};
 
     const totalCount = await eventsCollection.countDocuments(searchFilter);
@@ -1583,7 +1583,8 @@ app.get('/api/admin/events/:eventId', adminMiddleware, async (req, res) => {
   const { eventId } = req.params;
 
   if (!ObjectId.isValid(eventId)) {
-    return res.status(400).json({ message: 'Invalid event ID' });
+    res.status(400).json({ message: 'Invalid event ID' });
+    return
   }
 
   try {
@@ -1596,7 +1597,8 @@ app.get('/api/admin/events/:eventId', adminMiddleware, async (req, res) => {
     });
 
     if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
+      res.status(404).json({ message: 'Event not found' });
+      return
     }
 
     // Map _id to id
