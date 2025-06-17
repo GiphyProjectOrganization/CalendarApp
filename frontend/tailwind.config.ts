@@ -12,11 +12,7 @@ const config: ExtendedConfig = {
     './src/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
-    extend: {
-      fontFamily: {
-        cubao: ['CubaoRegular', 'sans-serif'],
-      },
-    },
+    extend: {},
   },
   daisyui: {
     themes: ["honey", "forest", "ocean"],

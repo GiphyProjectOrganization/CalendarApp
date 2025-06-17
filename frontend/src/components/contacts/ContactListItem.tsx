@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { FiCheck } from 'react-icons/fi';
 
 export interface ContactFrontend {
@@ -48,16 +49,18 @@ export const ContactListItem = ({
       <div className="card-body p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex gap-4 flex-1">
-            <div className="avatar">
+            <Link to={`/userProfile/${contact.userId}`} className="avatar hover:opacity-80 transition-opacity">
               <div className="w-12 rounded-full">
                 <img
                   src={contact.photoBase64 || '/avatar-placeholder.png'}
                   alt={contact.name || 'Contact Avatar'}
                 />
               </div>
-            </div>
+            </Link>
             <div>
-              <h3 className="card-title text-lg">{contact.name}</h3>
+              <Link to={`/userProfile/${contact.userId}`}>
+                <h3 className="card-title text-lg hover:underline">{contact.name}</h3>
+              </Link>
               {contact.email && <p className="text-sm">{contact.email}</p>}
               {contact.phoneNumber && <p className="text-sm">{contact.phoneNumber}</p>}
               <div className="flex flex-wrap gap-1 mt-2">
@@ -105,6 +108,6 @@ export const ContactListItem = ({
           </div>
         </div>
       </div>
-    </div>
+      </div>
   );
 };
