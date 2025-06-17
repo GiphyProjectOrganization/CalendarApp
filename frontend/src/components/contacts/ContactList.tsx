@@ -10,43 +10,50 @@ interface ContactListProps {
   selectedList: string | null;
   onSelect: (listId: string) => void;
   onDelete: (listId: string) => void;
+  onSelectAll: () => void; // Add this prop
 }
 
-const ContactLists = ({ lists, selectedList, onSelect, onDelete }:ContactListProps) => {
+const ContactLists = ({ lists, selectedList, onSelect, onDelete, onSelectAll }:ContactListProps) => {
   return (
-    <div className="p-4">
-      <h2 className="text-lg font-semibold mb-4">My Contact Lists</h2>
-      <ul className="menu bg-base-200 rounded-box">
+    <div>
+        <div className="flex items-center justify-center gap-4 mb-5 text-accent-content font-bold text-md">
+          <h2 className="cursor-default">My Contact Lists</h2>
+          <span>|</span>
+          <span
+            onClick={onSelectAll}
+            className={`cursor-pointer hover:underline ${
+              selectedList === null ? 'text-success-content' : ''
+            }`}
+          >
+            All Contacts
+          </span>
+        </div>
+      <ul className="space-y-2">
         {lists.map((list) => (
           <li
             key={list.id?.toString()}
-            className={`flex justify-between items-center ${
-              selectedList === list.id ? 'bg-primary text-primary-content' : ''
+            className={`flex items-center justify-between px-4 py-2 rounded-lg transition-colors duration-200 cursor-pointer ${
+              selectedList === list.id
+                ? 'bg-primary text-primary-content'
+                : 'bg-base-200 hover:bg-base-300'
             }`}
           >
             <button
-              className="flex-1 text-left"
+              className="flex-1 text-left truncate"
               onClick={() => onSelect(list.id)}
             >
               {list.name}
             </button>
+
             {!list.isDefault && (
               <button
-                className="btn btn-square btn-sm btn-ghost ml-2"
+                className="btn btn-sm btn-square btn-ghost hover:bg-error hover:text-error-content ml-2"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(list.id);
                 }}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                ✕
               </button>
             )}
           </li>

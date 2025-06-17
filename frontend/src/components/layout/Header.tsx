@@ -6,7 +6,7 @@ import { WeatherForecast } from "../weather/WeatherForecast";
 import { AuthContext } from "../contexts/authContext/authContext";
 import './Header.css';
 import { useAuth } from "../../hook/auth-hook";
-import { FiMenu, FiPlus, FiUsers } from 'react-icons/fi';
+import { FiMenu, FiPlus, FiUsers, FiUser, FiEdit, FiLogOut } from 'react-icons/fi';
 interface HeaderProps {
   onMenuClick: () => void;
 }
@@ -250,6 +250,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   to="/myProfileCard"
                   className="text-base text-base-content hover:bg-accent hover:text-accent-content"
                 >
+                  <FiUser className="inline-block w-5 h-5" />
                   My Profile
                 </NavLink>
               </li>
@@ -258,14 +259,27 @@ export function Header({ onMenuClick }: HeaderProps) {
                   to="/editProfile"
                   className="text-base text-base-content hover:bg-accent hover:text-accent-content"
                 >
+                  <FiEdit className="inline-block w-5 h-5" />
                   Edit Profile
                 </NavLink>
               </li>
+              
+              <li>
+                <NavLink
+                  to="/contacts"
+                  className="flex items-center gap-2 text-base text-base-content hover:bg-accent hover:text-accent-content"
+                >
+                  <FiUsers className="inline-block w-5 h-5" />
+                  Contacts
+                </NavLink>
+              </li>
+
               <li>
                 <button
                   onClick={logout}
                   className="text-base text-base-content hover:bg-error hover:text-error-content"
                 >
+                  <FiLogOut className="inline-block w-5 h-5" />
                   Sign out
                 </button>
               </li>

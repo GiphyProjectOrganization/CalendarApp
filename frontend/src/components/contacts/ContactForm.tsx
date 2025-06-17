@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ContactListFrontend } from './ContactList';
+import { FaSearch } from 'react-icons/fa';
 
 interface UserSearchResult {
   id: string;
@@ -77,52 +78,78 @@ const ContactForm = ({ open, onClose, onSubmit, lists }: ContactFormProps) => {
     <>
       {open && (
         <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Add New Contact</h3>
+          <div className="modal-box max-h-[80vh] overflow-auto relative bg-base-100 border border-base-300 rounded-2xl shadow-lg">
+            <h3 className="font-extrabold text-xl mb-6 text-base-content tracking-wide">
+              Add New Contact
+            </h3>
 
-            <div className="form-control mb-4">
-              <label className="label">
-                <span className="label-text">Search Users</span>
+            <div className="form-control mb-6 relative">
+              <label className="label flex items-center gap-2 cursor-text select-none">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-base-content opacity-50"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+                </svg>
+                <span className="label-text text-base-content font-semibold">Search Users</span>
               </label>
               <input
                 type="text"
-                className="input input-bordered w-full"
+                className="input input-bordered w-full pl-10 pr-4 rounded-xl shadow focus:ring-2 focus:ring-primary transition"
                 placeholder="Search by username, email or phone"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                autoComplete="off"
               />
               {isSearching && (
-                <div className="absolute right-8 top-12">
+                <div className="absolute right-4 top-11">
                   <span className="loading loading-spinner loading-xs"></span>
                 </div>
               )}
             </div>
 
             {searchResults.length > 0 && (
-              <div className="mb-4">
-                <div className="text-sm font-semibold mb-2">Search Results:</div>
-                <div className="max-h-40 overflow-y-auto border rounded-lg">
+              <div className="mb-6">
+                <div className="text-sm font-bold mb-3 text-base-content">
+                  Search Results:
+                </div>
+                <div className="max-h-44 overflow-y-auto border border-base-300 rounded-xl shadow-inner bg-base-200">
                   {searchResults.map((user) => (
                     <div
                       key={user.id}
-                      className={`p-2 hover:bg-base-200 cursor-pointer ${selectedUser?.id === user.id ? 'bg-base-200' : ''}`}
+                      className={`flex items-center gap-4 p-3 cursor-pointer rounded-xl transition-transform
+                      ${
+                        selectedUser?.id === user.id
+                          ? 'bg-primary text-primary-content shadow-lg scale-[1.03]'
+                          : 'hover:bg-primary/20 hover:text-primary transition-shadow'
+                      }`}
                       onClick={() => setSelectedUser(user)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') setSelectedUser(user);
+                      }}
                     >
-                      <div className="flex items-center gap-2">
-                        {user.profilePhoto && (
-                          <div className="avatar">
-                            <div className="w-8 rounded-full">
-                              <img src={user.profilePhoto} alt={user.name} />
-                            </div>
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-medium">{user.name}</div>
-                          <div className="text-sm opacity-70">{user.email}</div>
-                          {user.phoneNumber && (
-                            <div className="text-sm opacity-70">{user.phoneNumber}</div>
-                          )}
+                      {user.profilePhoto ? (
+                        <img
+                          src={user.profilePhoto}
+                          alt={user.name}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-primary"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary text-primary-content flex items-center justify-center font-bold text-lg">
+                          {user.name.charAt(0).toUpperCase()}
                         </div>
+                      )}
+                      <div className="flex flex-col overflow-hidden">
+                        <span className="font-semibold truncate">{user.name}</span>
+                        <span className="text-xs truncate">{user.email}</span>
+                        {user.phoneNumber && (
+                          <span className="text-xs truncate">{user.phoneNumber}</span>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -131,49 +158,74 @@ const ContactForm = ({ open, onClose, onSubmit, lists }: ContactFormProps) => {
             )}
 
             {selectedUser && (
-              <div className="mb-4 p-3 bg-base-100 rounded-lg border border-base-300">
-                <div className="font-medium">Selected User:</div>
-                <div className="flex items-center gap-2 mt-1">
-                  {selectedUser.profilePhoto && (
-                    <div className="avatar">
-                      <div className="w-8 rounded-full">
-                        <img src={selectedUser.profilePhoto} alt={selectedUser.name} />
-                      </div>
+              <div className="mb-6 flex items-center justify-between bg-base-200 rounded-full py-2 px-4 shadow-md border border-base-300">
+                <div className="flex items-center gap-3">
+                  {selectedUser.profilePhoto ? (
+                    <img
+                      src={selectedUser.profilePhoto}
+                      alt={selectedUser.name}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-primary"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-primary text-primary-content flex items-center justify-center font-bold text-xl">
+                      {selectedUser.name.charAt(0).toUpperCase()}
                     </div>
                   )}
                   <div>
-                    <div>{selectedUser.name}</div>
-                    <div className="text-sm opacity-70">{selectedUser.email}</div>
+                    <div className="text-base-content font-bold">{selectedUser.name}</div>
+                    <div className="text-sm">{selectedUser.email}</div>
                   </div>
                 </div>
+                <button
+                  onClick={() => setSelectedUser(null)}
+                  className="btn btn-ghost btn-sm btn-circle"
+                  aria-label="Remove selected user"
+                >
+                  ✕
+                </button>
               </div>
             )}
 
-            <div className="form-control mb-4">
-              <label className="label">
-                <span className="label-text">Add to Lists (optional)</span>
+            <div className="form-control mb-6">
+              <label className="label font-semibold text-base-content">
+                Add to Lists (optional)
               </label>
-              <select
-                multiple
-                className="select select-bordered w-full h-32"
-                value={selectedLists}
-                onChange={(e) => {
-                  const selected = Array.from(e.target.selectedOptions).map(option => option.value);
-                  setSelectedLists(selected);
-                }}
-              >
+              <div className="max-h-36 overflow-y-auto border border-base-300 rounded-xl p-3 bg-base-200 shadow-inner">
+                {lists.length === 0 && (
+                  <p className="text-base-content opacity-50 italic">No lists available</p>
+                )}
                 {lists.map((list) => (
-                  <option key={list.id?.toString()} value={list.id?.toString()}>
-                    {list.name}
-                  </option>
+                  <label
+                    key={list.id}
+                    className="flex items-center gap-3 cursor-pointer mb-2 select-none"
+                  >
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-primary"
+                      checked={selectedLists.includes(list.id)}
+                      onChange={() => {
+                        setSelectedLists((prev) =>
+                          prev.includes(list.id)
+                            ? prev.filter((id) => id !== list.id)
+                            : [...prev, list.id]
+                        );
+                      }}
+                    />
+                    <span className="text-base-content font-medium">{list.name}</span>
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
 
-            <div className="modal-action">
-              <button className="btn" onClick={onClose}>Cancel</button>
-              <button 
-                className="btn btn-primary" 
+            <div className="modal-action flex justify-end gap-4">
+              <button
+                className="btn btn-outline btn-md rounded-xl px-6 font-semibold tracking-wide transition hover:bg-base-300"
+                onClick={onClose}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary btn-md rounded-xl px-6 font-bold tracking-wider"
                 onClick={handleSubmit}
                 disabled={!selectedUser}
               >
@@ -181,9 +233,14 @@ const ContactForm = ({ open, onClose, onSubmit, lists }: ContactFormProps) => {
               </button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={onClose}></div>
+
+          <div
+            className="modal-backdrop"
+            onClick={onClose}
+          />
         </div>
       )}
+
     </>
   );
 };
