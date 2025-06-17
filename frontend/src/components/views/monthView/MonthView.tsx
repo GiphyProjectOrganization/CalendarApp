@@ -17,6 +17,7 @@ export const MonthView = () => {
   const [countryCode, setCountryCode] = useState<string | undefined>();
   const { location, isLoading, error } = UserLocation();
   const navigate = useNavigate(); 
+  const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
 
   const handleDateClick = (date: Date) => {
     const yyyy = date.getFullYear();
@@ -102,12 +103,75 @@ export const MonthView = () => {
 
   return (
     <div className="max-w-5xl bg-white-100 mx-auto p-4">
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={prevMonth} className="px-2 py-1 bg-secondary text-secondary-content rounded">←</button>
-        <h2 className="text-xl font-bold text-base-content">
-          {new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} {currentYear}
-        </h2>
-        <button onClick={nextMonth} className="px-2 py-1 bg-secondary text-secondary-content rounded">→</button>
+      <div className="mb-4 flex flex-col items-center">
+        <div className="flex items-center justify-between w-full">
+          <button
+            onClick={prevMonth}
+            className="px-2 py-1 bg-secondary text-secondary-content rounded"
+          >
+            ←
+          </button>
+
+          <h2
+            className="text-xl font-bold text-base-content underline cursor-pointer"
+            onClick={() => setShowMonthYearPicker(!showMonthYearPicker)}
+          >
+            {new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} {currentYear}
+          </h2>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => {
+                setCurrentMonth(today.getMonth());
+                setCurrentYear(today.getFullYear());
+              }}
+              className="px-2 py-1 bg-secondary text-primary-content rounded"
+            >
+              Today
+            </button>
+            <button
+              onClick={nextMonth}
+              className="px-2 py-1 bg-secondary text-secondary-content rounded"
+            >
+              →
+            </button>
+          </div>
+        </div>
+
+        {showMonthYearPicker && (
+          <div className="flex space-x-2 items-center mt-2">
+            <select
+              value={currentMonth}
+              onChange={(e) => setCurrentMonth(parseInt(e.target.value))}
+              className="px-2 py-1 border rounded"
+            >
+              {Array.from({ length: 12 }).map((_, idx) => (
+                <option key={idx} value={idx}>
+                  {new Date(0, idx).toLocaleString('default', { month: 'long' })}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={currentYear}
+              onChange={(e) => setCurrentYear(parseInt(e.target.value))}
+              className="px-2 py-1 border rounded"
+            >
+              {Array.from({ length: 21 }, (_, i) => new Date().getFullYear() - 10 + i).map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => setShowMonthYearPicker(false)}
+              className="px-2 py-1 bg-primary text-primary-content rounded"
+            >
+              OK
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-7 text-center text-base-content font-medium border-b">

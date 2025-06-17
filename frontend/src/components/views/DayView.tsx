@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { WeatherCard } from '../weather/WeateherCard';
 import { WEATHER_API_KEY, WEATHER_API_URL } from "../../constants";
 import { UserLocation } from '../../hook/userLocation-hook';
@@ -7,6 +7,7 @@ import { eventService } from '../../services/eventService';
 import { useAuth } from '../../hook/auth-hook';
 import { EventCard } from '../events/EventCard';
 import { Event } from '../../services/eventService';
+
 
 type ForecastDay = {
   dt: number;
@@ -46,7 +47,12 @@ export const DayView = () => {
   const { location, isLoading: locationLoading, error: locationError } = UserLocation();
   const { userId, token } = useAuth();
   const [hoveredHour, setHoveredHour] = useState<number | null>(null);
+  const navigate = useNavigate();
 
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.value; // format: "YYYY-MM-DD"
+    navigate(`?date=${selected}`);
+  };
 
   useEffect(() => {
     if (!location.lat || !location.lon || !location.countryCode) return;
@@ -193,7 +199,8 @@ export const DayView = () => {
       <div className="md:col-span-3">
         <div className="card bg-base-100 shadow-md">
           <div className="card-body p-4">
-            <h2 className="card-title text-xl mb-2">
+            <div className="flex items-center justify-between mb-2">
+            <h2 className="card-title text-xl">
               {targetDate.toLocaleDateString(undefined, {
                 weekday: "long",
                 year: "numeric",
@@ -201,6 +208,14 @@ export const DayView = () => {
                 day: "numeric",
               })}
             </h2>
+
+            <input
+              type="date"
+              className="input input-bordered input-sm w-30"
+              value={selectedDate || getTodayUTC().toISOString().split("T")[0]}
+              onChange={handleDateChange}
+            />
+          </div>
 
             {holidayName && (
               <div

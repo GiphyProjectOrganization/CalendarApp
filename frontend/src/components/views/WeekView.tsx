@@ -6,6 +6,7 @@ import { Event } from "../../services/eventService";
 import { EventCard } from "../events/EventCard";
 import Holidays from 'date-holidays';
 import { UserLocation } from '../../hook/userLocation-hook';
+import { useNavigate } from 'react-router-dom';
 
 interface WeekViewProps {
   startDate?: Date;
@@ -16,11 +17,11 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hoveredCell, setHoveredCell] = useState<[number, number] | null>(null); // [hourIdx, dayIdx]
+  const [hoveredCell, setHoveredCell] = useState<[number, number] | null>(null);
   const { location } = UserLocation();
   const [countryCode, setCountryCode] = useState<string | undefined>();
+  const navigate = useNavigate();
 
-  // Holiday initialization
   const hd = useMemo(() => {
     if (!countryCode) return null;
     return new Holidays(countryCode);
@@ -32,7 +33,6 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
     }
   }, [location.countryCode]);
 
-  // Memoize week start calculation
   const getWeekStart = useCallback((date: Date) => {
     const d = new Date(date);
     const day = d.getDay();
@@ -43,10 +43,12 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
   }, []);
 
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => getWeekStart(startDate));
+  const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(currentWeekStart.getMonth());
+  const [selectedYear, setSelectedYear] = useState(currentWeekStart.getFullYear());
 
-  // Precompute all holidays for the current week
-  const weekHolidays = useMemo(() => {
-    const holidays = new Map<number, string[]>(); // dayIdx -> holidayNames
+    const weekHolidays = useMemo(() => {
+    const holidays = new Map<number, string[]>(); 
     if (!hd) return holidays;
 
     Array.from({ length: 7 }).forEach((_, dayIdx) => {
@@ -69,7 +71,6 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
     return holidays;
   }, [hd, currentWeekStart]);
 
-  // Memoize hours and days
   const hours = useMemo(() => generateHours(), []);
   const days = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
@@ -79,7 +80,6 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
     });
   }, [currentWeekStart]);
 
-  // Event fetching
   useEffect(() => {
     if (!token) return;
 
@@ -100,7 +100,6 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
     fetchEvents();
   }, [token]);
 
-  // Memoize event calculations
   const { getEventsForTimeSlot, isEventStartingAtHour } = useMemo(() => {
     const getEventsForTimeSlot = (day: Date, hour: number): Event[] => {
       return events.filter(event => {
@@ -123,7 +122,6 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
     return { getEventsForTimeSlot, isEventStartingAtHour };
   }, [events]);
 
-  // Navigation handlers
   const goToPreviousWeek = useCallback(() => {
     setCurrentWeekStart(prev => {
       const newDate = new Date(prev);
@@ -144,7 +142,6 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
     setCurrentWeekStart(getWeekStart(new Date()));
   }, [getWeekStart]);
 
-  // Cell background calculation
   const getCellClasses = useCallback((hourIdx: number, dayIdx: number) => {
     const isHovered = hoveredCell && hoveredCell[0] === hourIdx && hoveredCell[1] === dayIdx;
     const isHourHovered = hoveredCell && hoveredCell[0] === hourIdx;
@@ -177,17 +174,44 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
   const handleCellLeave = useCallback(() => {
     setHoveredCell(null);
   }, []);
+  const handleDayClick = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+
+    const holidayNames = weekHolidays.get(days.findIndex(d => 
+      d.getDate() === date.getDate() && 
+      d.getMonth() === date.getMonth() && 
+      d.getFullYear() === date.getFullYear()
+    )) || [];
+    
+    const holidayParam = holidayNames.length > 0 
+      ? `&holiday=${encodeURIComponent(holidayNames[0])}` 
+      : '';
+    
+    navigate(`/calendar/day?date=${dateString}${holidayParam}`);
+  };
 
   return (
     <div className="max-w-5xl mx-auto p-4 bg-white-100">
-      {/* Week Navigation */}
-      <div className="flex justify-between items-center mb-4">
+    <div className="flex flex-col items-center mb-4">
+      <div className="flex justify-between items-center w-full">
         <button onClick={goToPreviousWeek} className="btn btn-sm btn-ghost">
           &larr; Previous Week
         </button>
-        <h2 className="text-xl font-semibold">
+
+        <h2 
+          className="text-xl font-bold cursor-pointer underline"
+          onClick={() => {
+            setSelectedMonth(currentWeekStart.getMonth());
+            setSelectedYear(currentWeekStart.getFullYear());
+            setShowMonthYearPicker(!showMonthYearPicker);
+          }}
+        >
           {currentWeekStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
         </h2>
+
         <div>
           <button onClick={goToToday} className="btn btn-sm btn-ghost mr-2">
             Today
@@ -197,6 +221,46 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
           </button>
         </div>
       </div>
+
+      {showMonthYearPicker && (
+        <div className="flex space-x-2 items-center mt-2">
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+            className="px-2 py-1 border rounded"
+          >
+            {Array.from({ length: 12 }).map((_, idx) => (
+              <option key={idx} value={idx}>
+                {new Date(0, idx).toLocaleString('default', { month: 'long' })}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            className="px-2 py-1 border rounded"
+          >
+            {Array.from({ length: 21 }, (_, i) => new Date().getFullYear() - 10 + i).map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+
+          <button
+            onClick={() => {
+              const newDate = new Date(selectedYear, selectedMonth, 1);
+              setCurrentWeekStart(getWeekStart(newDate));
+              setShowMonthYearPicker(false);
+            }}
+            className="px-2 py-1 bg-primary text-primary-content rounded"
+          >
+            OK
+          </button>
+        </div>
+      )}
+    </div>
 
       {loading && (
         <div className="flex justify-center py-4">
@@ -225,9 +289,10 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
           return (
             <div 
               key={dayIdx} 
-              className="text-center py-2 font-semibold bg-base-200 border-l border-base-300"
+              className="text-center py-2 font-semibold bg-base-200 border-l border-base-300 cursor-pointer hover:bg-base-300 transition-colors"
               onMouseEnter={() => handleCellHover(-1, dayIdx)}
               onMouseLeave={handleCellLeave}
+              onClick={() => handleDayClick(date)}
             >
               <div className="text-sm font-medium">
                 {date.toLocaleDateString(undefined, { weekday: 'short' })}
@@ -244,7 +309,6 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
           );
         })}
 
-        {/* Time slots */}
         {hours.map((hour, hourIdx) => (
           <React.Fragment key={hourIdx}>
             <div 
