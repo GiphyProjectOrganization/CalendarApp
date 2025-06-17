@@ -102,7 +102,7 @@ const AdminDashboard = () => {
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <NavLink
-            to="/admin/manage-users" // This route will need to render the user management table
+            to="/admin/manage-users"
             className="card bg-base-100 shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1"
           >
             <div className="card-body">
@@ -124,7 +124,7 @@ const AdminDashboard = () => {
           </NavLink>
 
           <NavLink
-            to="/admin/manage-events" // This route will need to render the event management table
+            to="/admin/manage-events"
             className="card bg-base-100 shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out transform hover:-translate-y-1"
           >
             <div className="card-body">
@@ -144,24 +144,6 @@ const AdminDashboard = () => {
               </div>
             </div>
           </NavLink>
-        </div>
-        <div className="mt-12 p-6 bg-base-100 rounded-lg shadow-md">
-          <div className="flex items-center mb-4">
-            <FaChartBar className="text-2xl text-neutral mr-3" />
-            <h2 className="text-xl font-semibold text-neutral">
-              Additional Site Statistics
-            </h2>
-          </div>
-          <p className="text-base-content/70">
-            This section can be expanded to display more detailed metrics,
-            charts, or reports. For example:
-          </p>
-          <ul className="list-disc list-inside text-base-content/70 mt-2 pl-5">
-            <li>Active users in the last 30 days</li>
-            <li>Event creation trends</li>
-            <li>Most popular event categories</li>
-            <li>User registration growth</li>
-          </ul>
         </div>
       </div>
     </div>
