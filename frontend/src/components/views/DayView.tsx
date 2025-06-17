@@ -36,6 +36,7 @@ export type EventCardData = {
 export const DayView = () => {
   const [searchParams] = useSearchParams();
   const selectedDate = searchParams.get("date");
+  const holidayName = searchParams.get("holiday");
   const [forecast, setForecast] = useState<ForecastDay[]>([]);
   const [unit, setUnit] = useState<"metric" | "imperial">("metric");
   const [loading, setLoading] = useState(true);
@@ -45,6 +46,7 @@ export const DayView = () => {
   const { location, isLoading: locationLoading, error: locationError } = UserLocation();
   const { userId, token } = useAuth();
   const [hoveredHour, setHoveredHour] = useState<number | null>(null);
+
 
   useEffect(() => {
     if (!location.lat || !location.lon || !location.countryCode) return;
@@ -191,7 +193,7 @@ export const DayView = () => {
       <div className="md:col-span-3">
         <div className="card bg-base-100 shadow-md">
           <div className="card-body p-4">
-            <h2 className="card-title text-xl mb-4">
+            <h2 className="card-title text-xl mb-2">
               {targetDate.toLocaleDateString(undefined, {
                 weekday: "long",
                 year: "numeric",
@@ -200,6 +202,18 @@ export const DayView = () => {
               })}
             </h2>
 
+            {holidayName && (
+              <div
+                className="inline-block rounded-full px-2 py-0.5 font-cubao text-xs font-semibold select-none cursor-default max-w-xs truncate"
+                style={{
+                  background: "linear-gradient(90deg, var(--color-error), var(--color-accent))",
+                  color: "var(--color-base-100)",
+                }}
+                title={decodeURIComponent(holidayName)}
+              >
+                🎉 {decodeURIComponent(holidayName)}
+              </div>
+            )}
             <div className="divider my-2" />
 
             {eventsLoading && (

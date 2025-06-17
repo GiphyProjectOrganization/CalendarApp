@@ -4,6 +4,8 @@ import { eventService } from "../../services/eventService";
 import { useAuth } from '../../hook/auth-hook';
 import { Event } from "../../services/eventService";
 import { EventCard } from "../events/EventCard";
+import Holidays from 'date-holidays';
+import { UserLocation } from '../../hook/userLocation-hook';
 
 interface WeekViewProps {
   startDate?: Date;
@@ -14,9 +16,23 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hoveredHour, setHoveredHour] = useState<number | null>(null);
-  const [hoveredDay, setHoveredDay] = useState<number | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<[number, number] | null>(null); // [hourIdx, dayIdx]
+  const { location } = UserLocation();
+  const [countryCode, setCountryCode] = useState<string | undefined>();
 
+  // Holiday initialization
+  const hd = useMemo(() => {
+    if (!countryCode) return null;
+    return new Holidays(countryCode);
+  }, [countryCode]);
+
+  useEffect(() => {
+    if (location.countryCode) {
+      setCountryCode(location.countryCode);
+    }
+  }, [location.countryCode]);
+
+  // Memoize week start calculation
   const getWeekStart = useCallback((date: Date) => {
     const d = new Date(date);
     const day = d.getDay();
@@ -28,8 +44,33 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
 
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => getWeekStart(startDate));
 
-  const hours = generateHours();
+  // Precompute all holidays for the current week
+  const weekHolidays = useMemo(() => {
+    const holidays = new Map<number, string[]>(); // dayIdx -> holidayNames
+    if (!hd) return holidays;
 
+    Array.from({ length: 7 }).forEach((_, dayIdx) => {
+      const date = new Date(currentWeekStart);
+      date.setDate(date.getDate() + dayIdx);
+      const holiday = hd.isHoliday(date);
+      
+      if (!holiday) return;
+      
+      const entries = Array.isArray(holiday) ? holiday : [holiday];
+      const publicHolidays = entries
+        .filter(e => e.type === 'public')
+        .map(e => e.name);
+      
+      if (publicHolidays.length > 0) {
+        holidays.set(dayIdx, publicHolidays);
+      }
+    });
+
+    return holidays;
+  }, [hd, currentWeekStart]);
+
+  // Memoize hours and days
+  const hours = useMemo(() => generateHours(), []);
   const days = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(currentWeekStart);
@@ -38,6 +79,7 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
     });
   }, [currentWeekStart]);
 
+  // Event fetching
   useEffect(() => {
     if (!token) return;
 
@@ -58,50 +100,83 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
     fetchEvents();
   }, [token]);
 
-  const getEventsForTimeSlot = useCallback((day: Date, hour: number): Event[] => {
-    return events.filter(event => {
+  // Memoize event calculations
+  const { getEventsForTimeSlot, isEventStartingAtHour } = useMemo(() => {
+    const getEventsForTimeSlot = (day: Date, hour: number): Event[] => {
+      return events.filter(event => {
+        const eventStart = new Date(`${event.startDate}T${event.startTime}`);
+        const eventEnd = new Date(`${event.endDate}T${event.endTime}`);
+        const isSameDay = eventStart.getDate() === day.getDate() && 
+                         eventStart.getMonth() === day.getMonth() && 
+                         eventStart.getFullYear() === day.getFullYear();
+        const startsBeforeHourEnd = eventStart.getHours() <= hour;
+        const endsAfterHourStart = eventEnd.getHours() >= hour;
+        return isSameDay && startsBeforeHourEnd && endsAfterHourStart;
+      });
+    };
+
+    const isEventStartingAtHour = (event: Event, hour: number) => {
       const eventStart = new Date(`${event.startDate}T${event.startTime}`);
-      const eventEnd = new Date(`${event.endDate}T${event.endTime}`);
-      const isSameDay = eventStart.getDate() === day.getDate() && 
-                       eventStart.getMonth() === day.getMonth() && 
-                       eventStart.getFullYear() === day.getFullYear();
-      const startsBeforeHourEnd = eventStart.getHours() <= hour;
-      const endsAfterHourStart = eventEnd.getHours() >= hour;
-      return isSameDay && startsBeforeHourEnd && endsAfterHourStart;
-    });
+      return eventStart.getHours() === hour;
+    };
+
+    return { getEventsForTimeSlot, isEventStartingAtHour };
   }, [events]);
 
-  const isEventStartingAtHour = useCallback((event: Event, hour: number) => {
-    const eventStart = new Date(`${event.startDate}T${event.startTime}`);
-    return eventStart.getHours() === hour;
+  // Navigation handlers
+  const goToPreviousWeek = useCallback(() => {
+    setCurrentWeekStart(prev => {
+      const newDate = new Date(prev);
+      newDate.setDate(newDate.getDate() - 7);
+      return newDate;
+    });
   }, []);
 
-  const goToPreviousWeek = useCallback(() => {
-    const prevWeek = new Date(currentWeekStart);
-    prevWeek.setDate(prevWeek.getDate() - 7);
-    setCurrentWeekStart(prevWeek);
-  }, [currentWeekStart]);
-
   const goToNextWeek = useCallback(() => {
-    const nextWeek = new Date(currentWeekStart);
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    setCurrentWeekStart(nextWeek);
-  }, [currentWeekStart]);
+    setCurrentWeekStart(prev => {
+      const newDate = new Date(prev);
+      newDate.setDate(newDate.getDate() + 7);
+      return newDate;
+    });
+  }, []);
 
   const goToToday = useCallback(() => {
     setCurrentWeekStart(getWeekStart(new Date()));
   }, [getWeekStart]);
 
-  const getCellBackground = (hourIdx: number, dayIdx: number) => {
-    const isHourHovered = hoveredHour === hourIdx;
-    const isDayHovered = hoveredDay === dayIdx;
-    const isCellHovered = isHourHovered && isDayHovered;
+  // Cell background calculation
+  const getCellClasses = useCallback((hourIdx: number, dayIdx: number) => {
+    const isHovered = hoveredCell && hoveredCell[0] === hourIdx && hoveredCell[1] === dayIdx;
+    const isHourHovered = hoveredCell && hoveredCell[0] === hourIdx;
+    const isDayHovered = hoveredCell && hoveredCell[1] === dayIdx;
+    const isHoliday = weekHolidays.has(dayIdx);
 
-    if (isCellHovered) return 'bg-primary/20';
-    if (isHourHovered) return 'bg-base-200';
-    if (isDayHovered) return 'bg-base-200';
-    return 'bg-white';
-  };
+    let classes = [
+      'min-h-[60px]',
+      'border-t',
+      'border-l',
+      'border-base-300',
+      'transition-colors',
+      'relative'
+    ];
+
+    if (isHoliday) classes.push('bg-error/10');
+    if (isHovered) classes.push('bg-primary/20');
+    else if (isHourHovered) classes.push('bg-base-200');
+    else if (isDayHovered) classes.push('bg-base-200');
+    else classes.push('bg-white');
+
+    return classes.join(' ');
+  }, [hoveredCell, weekHolidays]);
+
+  // Handle cell hover
+  const handleCellHover = useCallback((hourIdx: number, dayIdx: number) => {
+    setHoveredCell([hourIdx, dayIdx]);
+  }, []);
+
+  const handleCellLeave = useCallback(() => {
+    setHoveredCell(null);
+  }, []);
 
   return (
     <div className="max-w-5xl mx-auto p-4 bg-white-100">
@@ -141,69 +216,64 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
       <div className="grid grid-cols-[80px_repeat(7,minmax(0,1fr))] border border-base-300 rounded-lg overflow-hidden">
         {/* Header row */}
         <div className="bg-base-200"></div>
-        {days.map((date, dayIdx) => (
-          <div 
-            key={dayIdx} 
-            className="text-center py-2 font-semibold bg-base-200 border-l border-base-300"
-            onMouseEnter={() => setHoveredDay(dayIdx)}
-            onMouseLeave={() => setHoveredDay(null)}
-          >
-            <div className="text-sm font-medium">
-              {date.toLocaleDateString(undefined, { weekday: 'short' })}
+        {days.map((date, dayIdx) => {
+          const holidayNames = weekHolidays.get(dayIdx) || [];
+          const isToday = date.getDate() === new Date().getDate() && 
+                          date.getMonth() === new Date().getMonth() && 
+                          date.getFullYear() === new Date().getFullYear();
+          
+          return (
+            <div 
+              key={dayIdx} 
+              className="text-center py-2 font-semibold bg-base-200 border-l border-base-300"
+              onMouseEnter={() => handleCellHover(-1, dayIdx)}
+              onMouseLeave={handleCellLeave}
+            >
+              <div className="text-sm font-medium">
+                {date.toLocaleDateString(undefined, { weekday: 'short' })}
+              </div>
+              <div className={`text-lg ${isToday ? 'text-primary font-bold' : ''}`}>
+                {date.getDate()}
+              </div>
+              {holidayNames.length > 0 && (
+                <div className="text-xs mt-1 px-1 truncate text-error">
+                  {holidayNames[0]}
+                </div>
+              )}
             </div>
-            <div className={`text-lg ${
-              date.getDate() === new Date().getDate() && 
-              date.getMonth() === new Date().getMonth() && 
-              date.getFullYear() === new Date().getFullYear()
-                ? 'text-primary font-bold' : ''
-            }`}>
-              {date.getDate()}
-            </div>
-          </div>
-        ))}
+          );
+        })}
 
         {/* Time slots */}
         {hours.map((hour, hourIdx) => (
           <React.Fragment key={hourIdx}>
             <div 
               className="text-sm text-right pr-2 py-2 border-t border-base-300 bg-base-200"
-              onMouseEnter={() => setHoveredHour(hourIdx)}
-              onMouseLeave={() => setHoveredHour(null)}
+              onMouseEnter={() => handleCellHover(hourIdx, -1)}
+              onMouseLeave={handleCellLeave}
             >
               {hour}
             </div>
 
             {days.map((day, dayIdx) => {
               const timeSlotEvents = getEventsForTimeSlot(day, hourIdx);
+              const isHoliday = weekHolidays.has(dayIdx);
               
               return (
                 <div
                   key={dayIdx}
-                  className={`min-h-[60px] border-t border-l border-base-300 transition-colors relative ${getCellBackground(hourIdx, dayIdx)}`}
-                  onMouseEnter={() => {
-                    setHoveredHour(hourIdx);
-                    setHoveredDay(dayIdx);
-                  }}
-                  onMouseLeave={() => {
-                    setHoveredHour(null);
-                    setHoveredDay(null);
-                  }}
+                  className={getCellClasses(hourIdx, dayIdx)}
+                  onMouseEnter={() => handleCellHover(hourIdx, dayIdx)}
+                  onMouseLeave={handleCellLeave}
                 >
+                  {isHoliday && hourIdx === 0 && (
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-error/50"></div>
+                  )}
                   {timeSlotEvents.map((event) => (
                     isEventStartingAtHour(event, hourIdx) ? (
                       <EventCard 
                         key={event.id}
-                        event={{
-                          id: event.id,
-                          title: event.title,
-                          description: event.description,
-                          startDate: event.startDate,
-                          startTime: event.startTime,
-                          endDate: event.endDate,
-                          endTime: event.endTime,
-                          location: event.location,
-                          isPublic: event.isPublic
-                        }}
+                        event={event}
                         compact={true}
                       />
                     ) : (

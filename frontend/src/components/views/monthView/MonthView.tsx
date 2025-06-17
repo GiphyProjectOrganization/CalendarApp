@@ -23,7 +23,9 @@ export const MonthView = () => {
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const dd = String(date.getDate()).padStart(2, '0');
     const dateString = `${yyyy}-${mm}-${dd}`;
-    navigate(`/calendar/day?date=${dateString}`);
+    const holidayNames = hd ? isHoliday(date) : [];
+    const holidayParam = holidayNames.length > 0 ? `&holiday=${encodeURIComponent(holidayNames[0])}` : '';
+    navigate(`/calendar/day?date=${dateString}${holidayParam}`);
   };
 
   const dates = MonthGrid(currentYear, currentMonth, 1);
@@ -126,6 +128,7 @@ export const MonthView = () => {
             <div key={rowIdx} className={`honey-row ${rowIdx % 2 === 1 ? 'offset' : ''}`}>
               {week.map((date, idx) => {
                 const isWeekendDate = isWeekend(date);
+                const holidayNames = hd ? isHoliday(date) : [];
                 return (
                   <div 
                     key={idx} 
@@ -137,7 +140,12 @@ export const MonthView = () => {
                     }`}
                   >
                     <div className="hex-inner">
-                      {date.getDate()}
+                      <div>{date.getDate()}</div>
+                      {holidayNames.length > 0 && (
+                        <div className="holiday-badge">
+                          {holidayNames[0]}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
