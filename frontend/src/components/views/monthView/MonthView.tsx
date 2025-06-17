@@ -10,6 +10,72 @@ import { eventService, Event } from '../../../services/eventService';
 
 const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+interface ExpandedEvent extends Event {
+  originalId?: string;
+}
+
+function expandRecurringEvents(events: Event[], start: Date, end: Date): ExpandedEvent[] {
+  const expanded: ExpandedEvent[] = [];
+  for (const event of events) {
+    if (!event.isRecurring || !event.recurrencePattern) {
+      expanded.push(event);
+      continue;
+    }
+    const pattern = event.recurrencePattern;
+    let occurrence = new Date(event.startDate + 'T' + event.startTime);
+    const eventDuration = (() => {
+      const start = new Date(event.startDate + 'T' + event.startTime);
+      const endD = new Date(event.endDate + 'T' + event.endTime);
+      return endD.getTime() - start.getTime();
+    })();
+    let count = 0;
+    while (occurrence <= end) {
+      if (occurrence >= start) {
+        let valid = true;
+        if (pattern.type === 'weekly' && pattern.daysOfWeek) {
+          valid = pattern.daysOfWeek.includes(occurrence.getDay());
+        }
+        if (pattern.type === 'monthly' && pattern.dayOfMonth) {
+          valid = occurrence.getDate() === pattern.dayOfMonth;
+        }
+        if (pattern.type === 'yearly' && pattern.dayOfMonth && pattern.daysOfWeek) {
+          valid = occurrence.getDate() === pattern.dayOfMonth && pattern.daysOfWeek.includes(occurrence.getDay());
+        }
+        if (valid) {
+          expanded.push({
+            ...event,
+            startDate: occurrence.toISOString().slice(0, 10),
+            endDate: new Date(occurrence.getTime() + eventDuration).toISOString().slice(0, 10),
+            startTime: event.startTime,
+            endTime: event.endTime,
+            id: event.id + '_rec_' + count,
+            originalId: event.id, // <-- add this
+          });
+        }
+      }
+      count++;
+      switch (pattern.type) {
+        case 'daily':
+          occurrence.setDate(occurrence.getDate() + (pattern.interval || 1));
+          break;
+        case 'weekly':
+          occurrence.setDate(occurrence.getDate() + 7 * (pattern.interval || 1));
+          break;
+        case 'monthly':
+          occurrence.setMonth(occurrence.getMonth() + (pattern.interval || 1));
+          break;
+        case 'yearly':
+          occurrence.setFullYear(occurrence.getFullYear() + (pattern.interval || 1));
+          break;
+        default:
+          occurrence = new Date(end.getTime() + 1); // break loop
+      }
+      if (pattern.endDate && occurrence > new Date(pattern.endDate)) break;
+    }
+  }
+  return expanded;
+}
+
 export const MonthView = () => {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
@@ -123,17 +189,37 @@ export const MonthView = () => {
     fetchEvents();
   }, []);
 
+  const monthStart = new Date(currentYear, currentMonth, 1);
+  const monthEnd = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
+
+  const expandedEvents = useMemo(() => expandRecurringEvents(participatingEvents, monthStart, monthEnd), [participatingEvents, currentMonth, currentYear]);
+
   const eventsByDate = useMemo(() => {
     const map: Record<string, Event[]> = {};
-    participatingEvents.forEach(event => {
-      // Normalize the event date to match our date key format
+    expandedEvents.forEach(event => {
       const eventDate = new Date(event.startDate);
       const dateKey = getDateKey(eventDate);
       if (!map[dateKey]) map[dateKey] = [];
       map[dateKey].push(event);
     });
     return map;
-  }, [participatingEvents]);
+  }, [expandedEvents]);
+
+  // Utility to check for valid MongoDB ObjectId (24 hex chars)
+  function isValidObjectId(id: string | undefined): boolean {
+    return !!id && /^[a-fA-F0-9]{24}$/.test(id);
+  }
+
+  const handleEventClick = (event: ExpandedEvent) => {
+    // Always use the real MongoDB ObjectId for navigation
+    // For recurring events, use originalId; for non-recurring, use id
+    const realId = event.originalId || event.id;
+    if (isValidObjectId(realId)) {
+      navigate(`/events/${realId}`);
+      return;
+    }
+    alert('This event cannot be opened (invalid event ID).');
+  };
 
   return (
     <div className="max-w-5xl bg-white-100 mx-auto p-4">

@@ -34,6 +34,82 @@ export type EventCardData = {
   isPublic: boolean;
 };
 
+interface ExpandedEvent extends Event {
+  originalId?: string;
+}
+
+function isValidObjectId(id: string | undefined): boolean {
+  return !!id && /^[a-fA-F0-9]{24}$/.test(id);
+}
+
+function expandRecurringEvents(events: Event[], day: Date): ExpandedEvent[] {
+  const expanded: ExpandedEvent[] = [];
+  for (const event of events) {
+    if (!event.isRecurring || !event.recurrencePattern) {
+      expanded.push(event);
+      continue;
+    }
+    const pattern = event.recurrencePattern;
+    let occurrence = new Date(event.startDate + 'T' + event.startTime);
+    const eventDuration = (() => {
+      const startD = new Date(event.startDate + 'T' + event.startTime);
+      const endD = new Date(event.endDate + 'T' + event.endTime);
+      return endD.getTime() - startD.getTime();
+    })();
+    let count = 0;
+    const end = new Date(day);
+    end.setHours(23, 59, 59, 999);
+    while (occurrence <= end) {
+      if (
+        occurrence.getFullYear() === day.getFullYear() &&
+        occurrence.getMonth() === day.getMonth() &&
+        occurrence.getDate() === day.getDate()
+      ) {
+        let valid = true;
+        if (pattern.type === 'weekly' && pattern.daysOfWeek) {
+          valid = pattern.daysOfWeek.includes(occurrence.getDay());
+        }
+        if (pattern.type === 'monthly' && pattern.dayOfMonth) {
+          valid = occurrence.getDate() === pattern.dayOfMonth;
+        }
+        if (pattern.type === 'yearly' && pattern.dayOfMonth && pattern.daysOfWeek) {
+          valid = occurrence.getDate() === pattern.dayOfMonth && pattern.daysOfWeek.includes(occurrence.getDay());
+        }
+        if (valid) {
+          expanded.push({
+            ...event,
+            startDate: occurrence.toISOString().slice(0, 10),
+            endDate: new Date(occurrence.getTime() + eventDuration).toISOString().slice(0, 10),
+            startTime: event.startTime,
+            endTime: event.endTime,
+            id: event.id + '_rec_' + count,
+            originalId: event.id,
+          });
+        }
+      }
+      count++;
+      switch (pattern.type) {
+        case 'daily':
+          occurrence.setDate(occurrence.getDate() + (pattern.interval || 1));
+          break;
+        case 'weekly':
+          occurrence.setDate(occurrence.getDate() + 7 * (pattern.interval || 1));
+          break;
+        case 'monthly':
+          occurrence.setMonth(occurrence.getMonth() + (pattern.interval || 1));
+          break;
+        case 'yearly':
+          occurrence.setFullYear(occurrence.getFullYear() + (pattern.interval || 1));
+          break;
+        default:
+          occurrence = new Date(end.getTime() + 1);
+      }
+      if (pattern.endDate && occurrence > new Date(pattern.endDate)) break;
+    }
+  }
+  return expanded;
+}
+
 export const DayView = () => {
   const [searchParams] = useSearchParams();
   const selectedDate = searchParams.get("date");
@@ -107,6 +183,8 @@ export const DayView = () => {
   };
 
   const targetDate = selectedDate ? parseUTCDate(selectedDate) : getTodayUTC();
+  // Expand recurring events for the visible day
+  const expandedEvents = expandRecurringEvents(events, targetDate);
 
   const dayForecast = forecast.find((day) => {
     const forecastDate = new Date(day.dt * 1000);
@@ -135,10 +213,10 @@ export const DayView = () => {
     isPublic: event.isPublic
   });
 
-  events.forEach(event => {
+  // Use expandedEvents for time slot mapping
+  expandedEvents.forEach(event => {
     const eventStart = new Date(`${event.startDate}T${event.startTime}`);
     const eventEnd = new Date(`${event.endDate}T${event.endTime}`);
-
     const eventStartUTC = new Date(
       Date.UTC(
         eventStart.getFullYear(),
@@ -148,7 +226,6 @@ export const DayView = () => {
         eventStart.getMinutes()
       )
     );
-    
     const eventEndUTC = new Date(
       Date.UTC(
         eventEnd.getFullYear(),
@@ -158,14 +235,12 @@ export const DayView = () => {
         eventEnd.getMinutes()
       )
     );
-
     const timeSlotEvent: EventCardData = {
       ...event,
       location: typeof event.location === 'object' 
         ? event.location.address 
         : event.location
     };
-
     if (
       eventStartUTC.getUTCFullYear() === targetDate.getUTCFullYear() &&
       eventStartUTC.getUTCMonth() === targetDate.getUTCMonth() &&
@@ -173,9 +248,8 @@ export const DayView = () => {
     ) {
       const startHour = eventStartUTC.getUTCHours();
       const endHour = Math.min(eventEndUTC.getUTCHours(), 23); //Cap at 23:59
-
       for (let hour = startHour; hour <= endHour; hour++) {
-        timeSlots[hour].events.push(eventToCardData(event));
+        timeSlots[hour].events.push(timeSlotEvent);
       }
     }
   });
@@ -192,6 +266,15 @@ export const DayView = () => {
       )
     );
     return eventStartUTC.getUTCHours() === hour;
+  };
+
+  const handleEventClick = (event: ExpandedEvent) => {
+    const realId = event.originalId || event.id;
+    if (isValidObjectId(realId)) {
+      navigate(`/events/${realId}`);
+      return;
+    }
+    alert('This event cannot be opened (invalid event ID).');
   };
 
   return (
@@ -266,8 +349,9 @@ export const DayView = () => {
                           isEventStartingAtHour(event, hourIndex) ? (
                             <EventCard 
                               key={event.id}
-                              event={event as EventCardData}
+                              event={event as ExpandedEvent}
                               compact={false}
+                              onClick={() => handleEventClick(event as ExpandedEvent)}
                             />
                           ) : (
                             <div 
@@ -289,7 +373,7 @@ export const DayView = () => {
       </div>
 
       <div className="md:col-span-1">
-        {dayForecast && <WeatherCard day={dayForecast} unit={unit} locationName={location.city} />}
+        {dayForecast && <WeatherCard day={dayForecast} unit={unit} locationName={location.city || ''} />}
         {!dayForecast && locationError && (
           <div className="alert alert-error shadow-md w-full">
             <svg

@@ -11,6 +11,75 @@ import { useNavigate } from 'react-router-dom';
 interface WeekViewProps {
   startDate?: Date;
 }
+interface ExpandedEvent extends Event {
+  originalId?: string;
+}
+
+function isValidObjectId(id: string | undefined): boolean {
+  return !!id && /^[a-fA-F0-9]{24}$/.test(id);
+}
+
+function expandRecurringEvents(events: Event[], start: Date, end: Date): ExpandedEvent[] {
+  const expanded: ExpandedEvent[] = [];
+  for (const event of events) {
+    if (!event.isRecurring || !event.recurrencePattern) {
+      expanded.push(event);
+      continue;
+    }
+    const pattern = event.recurrencePattern;
+    let occurrence = new Date(event.startDate + 'T' + event.startTime);
+    const eventDuration = (() => {
+      const startD = new Date(event.startDate + 'T' + event.startTime);
+      const endD = new Date(event.endDate + 'T' + event.endTime);
+      return endD.getTime() - startD.getTime();
+    })();
+    let count = 0;
+    while (occurrence <= end) {
+      if (occurrence >= start) {
+        let valid = true;
+        if (pattern.type === 'weekly' && pattern.daysOfWeek) {
+          valid = pattern.daysOfWeek.includes(occurrence.getDay());
+        }
+        if (pattern.type === 'monthly' && pattern.dayOfMonth) {
+          valid = occurrence.getDate() === pattern.dayOfMonth;
+        }
+        if (pattern.type === 'yearly' && pattern.dayOfMonth && pattern.daysOfWeek) {
+          valid = occurrence.getDate() === pattern.dayOfMonth && pattern.daysOfWeek.includes(occurrence.getDay());
+        }
+        if (valid) {
+          expanded.push({
+            ...event,
+            startDate: occurrence.toISOString().slice(0, 10),
+            endDate: new Date(occurrence.getTime() + eventDuration).toISOString().slice(0, 10),
+            startTime: event.startTime,
+            endTime: event.endTime,
+            id: event.id + '_rec_' + count,
+            originalId: event.id, // <-- add this
+          });
+        }
+      }
+      count++;
+      switch (pattern.type) {
+        case 'daily':
+          occurrence.setDate(occurrence.getDate() + (pattern.interval || 1));
+          break;
+        case 'weekly':
+          occurrence.setDate(occurrence.getDate() + 7 * (pattern.interval || 1));
+          break;
+        case 'monthly':
+          occurrence.setMonth(occurrence.getMonth() + (pattern.interval || 1));
+          break;
+        case 'yearly':
+          occurrence.setFullYear(occurrence.getFullYear() + (pattern.interval || 1));
+          break;
+        default:
+          occurrence = new Date(end.getTime() + 1);
+      }
+      if (pattern.endDate && occurrence > new Date(pattern.endDate)) break;
+    }
+  }
+  return expanded;
+}
 
 export function WeekView({ startDate = new Date() }: WeekViewProps) {
   const { token } = useAuth();
@@ -100,9 +169,15 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
     fetchEvents();
   }, [token]);
 
+  const weekStart = getWeekStart(currentWeekStart);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+
+  const expandedEvents = useMemo(() => expandRecurringEvents(events, weekStart, weekEnd), [events, weekStart.getTime(), weekEnd.getTime()]);
+
   const { getEventsForTimeSlot, isEventStartingAtHour } = useMemo(() => {
     const getEventsForTimeSlot = (day: Date, hour: number): Event[] => {
-      return events.filter(event => {
+      return expandedEvents.filter(event => {
         const eventStart = new Date(`${event.startDate}T${event.startTime}`);
         const eventEnd = new Date(`${event.endDate}T${event.endTime}`);
         const isSameDay = eventStart.getDate() === day.getDate() && 
@@ -113,14 +188,12 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
         return isSameDay && startsBeforeHourEnd && endsAfterHourStart;
       });
     };
-
     const isEventStartingAtHour = (event: Event, hour: number) => {
       const eventStart = new Date(`${event.startDate}T${event.startTime}`);
       return eventStart.getHours() === hour;
     };
-
     return { getEventsForTimeSlot, isEventStartingAtHour };
-  }, [events]);
+  }, [expandedEvents]);
 
   const goToPreviousWeek = useCallback(() => {
     setCurrentWeekStart(prev => {
@@ -191,6 +264,15 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
       : '';
     
     navigate(`/calendar/day?date=${dateString}${holidayParam}`);
+  };
+
+  const handleEventClick = (event: ExpandedEvent) => {
+    const realId = event.originalId || event.id;
+    if (isValidObjectId(realId)) {
+      navigate(`/events/${realId}`);
+      return;
+    }
+    alert('This event cannot be opened (invalid event ID).');
   };
 
   return (
@@ -341,6 +423,7 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
                           key={event.id}
                           event={event}
                           compact={true}
+                          onClick={() => handleEventClick(event as ExpandedEvent)}
                         />
                       ) : (
                         <div 

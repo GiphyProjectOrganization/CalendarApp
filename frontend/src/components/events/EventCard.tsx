@@ -7,9 +7,10 @@ interface EventCardProps {
   compact?: boolean;
   onEdit?: (event: Event) => void;
   onDelete?: (eventId: string) => void;
+  onClick?: () => void; // Add onClick prop
 }
 
-export const EventCard = ({ event, compact = false, onEdit, onDelete }: EventCardProps) => {
+export const EventCard = ({ event, compact = false, onEdit, onDelete, onClick }: EventCardProps) => {
   const navigate = useNavigate();
 
   const getDisplayAddress = (location: Event['location']): string => {
@@ -18,6 +19,10 @@ export const EventCard = ({ event, compact = false, onEdit, onDelete }: EventCar
   };
 
   const handleClick = () => {
+    if (onClick) {
+      onClick();
+      return;
+    }
     if (!onEdit && !onDelete) {
       navigate(`/events/${event.id}`);
     }

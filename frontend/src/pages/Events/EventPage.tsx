@@ -7,6 +7,10 @@ import { DailyForecast } from '../../components/weather/WeateherCard';
 import { fetchWeatherForDate } from '../../services/weatherService';
 import { WeatherCard } from '../../components/weather/WeateherCard';
 
+function isValidObjectId(id: string | undefined): boolean {
+  return !!id && /^[a-fA-F0-9]{24}$/.test(id);
+}
+
 const EventPage = () => {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
@@ -116,29 +120,31 @@ const EventPage = () => {
     }
   };
 
-    useEffect(() => {
-        const fetchEvent = async () => {
-            setIsLoading(true); 
-            try {
-            const response = await fetch(`http://localhost:5000/api/events/${eventId}`);
-            
-            if (!response.ok) throw new Error('Failed to fetch');
-            
-            const eventData = await response.json();
-            
-            setEvent(eventData);
-            setAllParticipants(eventData.participants || []);
-            setDisplayedParticipants((eventData.participants || []).slice(0, participantsPerPage));
-            } catch (err) {
-            console.error('Full error:', err);
-            setError(err instanceof Error ? err.message : 'Unknown error');
-            } finally {
-            setIsLoading(false);
-            }
-        };
+  useEffect(() => {
+    if (!eventId || !isValidObjectId(eventId)) {
+      setError('Invalid event ID.');
+      setIsLoading(false);
+      return;
+    }
+    const fetchEvent = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`http://localhost:5000/api/events/${eventId}`);
+        if (!response.ok) throw new Error('Failed to fetch');
+        const eventData = await response.json();
+        setEvent(eventData);
+        setAllParticipants(eventData.participants || []);
+        setDisplayedParticipants((eventData.participants || []).slice(0, participantsPerPage));
+      } catch (err) {
+        console.error('Full error:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-        fetchEvent();
-    }, [eventId]);
+    fetchEvent();
+  }, [eventId]);
 
   const handleRemoveParticipant = async (email: string) => {
     if (!auth.userId || auth.userId !== event?.createdBy) {
