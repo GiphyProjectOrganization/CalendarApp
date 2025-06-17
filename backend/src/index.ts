@@ -1578,6 +1578,41 @@ app.delete('/api/admin/events/:eventId', adminMiddleware, async (req, res) => {
   }
 });
 
+// GET a single event by ID (for admins)
+app.get('/api/admin/events/:eventId', adminMiddleware, async (req, res) => {
+  const { eventId } = req.params;
+
+  if (!ObjectId.isValid(eventId)) {
+    return res.status(400).json({ message: 'Invalid event ID' });
+  }
+
+  try {
+    const client = await connectDB();
+    const db = client.db('calendar');
+    const eventsCollection = db.collection('events');
+
+    const event = await eventsCollection.findOne({
+      _id: new ObjectId(eventId),
+    });
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Map _id to id
+    const formattedEvent = {
+      ...event,
+      id: event._id.toString(),
+    };
+    delete (formattedEvent as any)._id;
+
+    res.json(formattedEvent);
+  } catch (error) {
+    console.error('Failed to fetch event for admin:', error);
+    res.status(500).json({ message: 'Failed to fetch event' });
+  }
+});
+
 app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
   try {
     const client = await connectDB();
