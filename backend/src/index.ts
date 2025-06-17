@@ -1374,7 +1374,6 @@ app.get('/api/admin/events', adminMiddleware, async (req, res) => {
       hasPreviousPage: currentPage > 1
     });
   } catch (error) {
-    console.error('Failed to fetch events:', error);
     res.status(500).json({ message: 'Failed to fetch events' });
   }
 });

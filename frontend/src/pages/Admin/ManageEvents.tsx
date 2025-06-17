@@ -30,7 +30,6 @@ const ManageEvents = () => {
       setEvents(response.data);
       setError('');
     } catch (err) {
-      console.error('Error fetching events:', err);
       setError('Failed to load events.');
     } finally {
       setLoading(false);
@@ -53,7 +52,6 @@ const ManageEvents = () => {
       );
       alert('Event deleted successfully');
     } catch (err) {
-      console.error('Error deleting event:', err);
       alert('Failed to delete event.');
     }
   };
