@@ -138,9 +138,7 @@ const AdminDashboard = () => {
                 Browse, search, edit, or delete events on the platform.
               </p>
               <div className="card-actions justify-end mt-4">
-                <button className="btn btn-info btn-outline">
-                  Go to Events
-                </button>
+                <button className="btn btn-info btn-outline">Go to Events</button>
               </div>
             </div>
           </NavLink>

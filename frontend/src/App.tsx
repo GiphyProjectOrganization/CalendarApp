@@ -18,6 +18,7 @@ import EventPage from './pages/Events/EventPage';
 import { UserProfile } from './components/profile/UserProfile';
 import AdminDashboard from './pages/Admin/Dashboard';
 import ManageUsers from './pages/Admin/ManageUsers';
+import ManageEvents from './pages/Admin/ManageEvents';
 import ContactsView from './components/contacts/ContactsView';
 import { AboutUs } from './components/aboutus/AboutUs';
 import EditEvent from './pages/Events/EditEvent';
@@ -87,6 +88,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ManageUsers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/manage-events"
+            element={
+              <ProtectedRoute>
+                <ManageEvents />
               </ProtectedRoute>
             }
           />
