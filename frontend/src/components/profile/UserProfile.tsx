@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ThemeContext } from "../contexts/theme/ThemeContext";
 
-export const UserProfile: React.FC = () => {
+export const UserProfile = () => {
     const { userId } = useParams<{ userId: string }>();
     const [user, setUser] = useState<{ photoBase64?: string; username: string; name?: string; email: string; phoneNumber: string } | null>(null);
     const [loading, setLoading] = useState(true);
