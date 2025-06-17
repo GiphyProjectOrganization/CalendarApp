@@ -6,13 +6,13 @@ import { WeatherForecast } from "../weather/WeatherForecast";
 import { AuthContext } from "../contexts/authContext/authContext";
 import './Header.css';
 import { useAuth } from "../../hook/auth-hook";
-import { FiMenu, FiPlus, FiUsers, FiUser, FiEdit, FiLogOut } from 'react-icons/fi';
+import { FiMenu, FiPlus, FiUsers, FiUser, FiEdit, FiLogOut, FiSettings } from 'react-icons/fi';
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const { isLoggedIn, logout, profilePhoto } = useContext(AuthContext);
+  const { isLoggedIn, logout, profilePhoto, isAdmin } = useContext(AuthContext);
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -274,6 +274,18 @@ export function Header({ onMenuClick }: HeaderProps) {
                 </NavLink>
               </li>
 
+              {isAdmin && (
+                <li>
+                  <NavLink
+                    to="/admin"
+                    className="flex items-center gap-2 text-base text-base-content hover:bg-warning hover:text-warning-content"
+                  >
+                    <FiSettings className="inline-block w-5 h-5" />
+                    Admin
+                  </NavLink>
+                </li>
+              )}
+
               <li>
                 <button
                   onClick={logout}
@@ -285,15 +297,6 @@ export function Header({ onMenuClick }: HeaderProps) {
               </li>
             </ul>
           </div>
-        )}
-
-        {isLoggedIn && (
-          <Link
-            to="/admin"
-            className="btn btn-sm btn-ghost text-warning mr-2"
-          >
-            Admin
-          </Link>
         )}
       </div>
     </div>
