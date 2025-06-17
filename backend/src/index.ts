@@ -1390,7 +1390,8 @@ app.delete('/api/admin/events/:eventId', adminMiddleware, async (req, res) => {
     const result = await eventsCollection.deleteOne({ _id: new ObjectId(eventId) });
     
     if (result.deletedCount === 0) {
-      return res.status(404).json({ message: 'Event not found' });
+      res.status(404).json({ message: 'Event not found' });
+      return;
     }
     
     res.json({ message: 'Event deleted successfully' });

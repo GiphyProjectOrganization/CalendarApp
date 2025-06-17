@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { User } from "..";
+import { connectDB } from "../db";
+import { ObjectId } from "mongodb";
 
 export interface AuthRequest extends Request {
     userId?: string;
