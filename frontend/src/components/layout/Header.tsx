@@ -274,7 +274,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                 </NavLink>
               </li>
 
-              {isAdmin && (
+              {useAuth.isAdmin && (
                 <li>
                   <NavLink
                     to="/admin"
