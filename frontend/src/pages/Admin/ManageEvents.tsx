@@ -88,3 +88,5 @@ export const ManageEvents = () => {
     </div>
   );
 };
+
+export default ManageEvents;
