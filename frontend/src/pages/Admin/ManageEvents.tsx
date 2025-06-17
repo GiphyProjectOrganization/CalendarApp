@@ -86,7 +86,7 @@ const ManageEvents = () => {
   return (
     <div className="bg-base-100 shadow-md rounded-lg p-6">
       <h2 className="text-2xl font-semibold mb-4 text-primary">Manage Events</h2>
-      
+
       <div className="flex gap-2 mb-4">
         <input
           type="text"
@@ -130,7 +130,7 @@ const ManageEvents = () => {
                   <div className="text-sm">
                     <div>{event.creatorEmail}</div>
                     <div className="text-base-content/70">
-                      ID: {event.createdBy.slice(-6)}
+                      ID: {event.createdBy ? event.createdBy.slice(-6) : "N/A"}
                     </div>
                   </div>
                 </td>
