@@ -37,7 +37,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      <AuthContext.Provider value={{ 
+      <AuthContext.Provider value={{
         isLoggedIn: !!token,
         token,
         userId,
@@ -56,7 +56,7 @@ function App() {
           <Route path='/' element={<MonthView />} />
           <Route path='/editProfile' element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
           <Route path='/login' element={<LoginPage />} />
-          <Route path='/userProfile/:userId' element={<UserProfile />} />
+          <Route path='/userProfile/:userId' element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
           <Route path='/myProfileCard' element={<ProtectedRoute><ProfileCard /></ProtectedRoute>} />
           <Route path="/calendar" element={<Outlet />}>
             <Route path="day" element={<DayView />} />
@@ -73,7 +73,7 @@ function App() {
             }
           />
           <Route path="/contacts" element={<ContactsView />} />
-          <Route path="/events/:eventId" element={<EventPage />} />
+          <Route path="/events/:eventId" element={<ProtectedRoute><EventPage /></ProtectedRoute>} />
           <Route
             path="/admin"
             element={

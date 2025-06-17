@@ -92,7 +92,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
       <div className="navbar-end">
 
-        {isLoggedIn && <div className="dropdown dropdown-end mr-2">
+        <div className="dropdown dropdown-end mr-2">
           <label tabIndex={0} className="btn btn-ghost btn-circle">
             <svg
               className="w-6 h-6"
@@ -116,7 +116,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               autoComplete="off"
             />
             <div className="flex gap-4 mt-2 mb-2 justify-center">
-              <label className="flex items-center gap-1 cursor-pointer">
+              {isLoggedIn && <label className="flex items-center gap-1 cursor-pointer">
                 <input
                   type="radio"
                   name="searchType"
@@ -126,7 +126,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   className="radio radio-xs"
                 />
                 <span className="text-xs">Users</span>
-              </label>
+              </label>}
               <label className="flex items-center gap-1 cursor-pointer">
                 <input
                   type="radio"
@@ -200,7 +200,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               <div className="mt-2 text-xs text-gray-400 text-center">No users found.</div>
             )}
           </div>
-        </div>}
+        </div>
 
         {isLoggedIn && (
           <Link
@@ -263,7 +263,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   Edit Profile
                 </NavLink>
               </li>
-              
+
               <li>
                 <NavLink
                   to="/contacts"
