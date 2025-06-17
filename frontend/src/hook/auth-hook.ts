@@ -100,9 +100,12 @@ export function useAuth(): AuthHook {
         const stored = localStorage.getItem('userData');
         if (stored) {
             const data: { userId: string; email: string; token: string; expiration: string, isAdmin: boolean, isBlocked: boolean } = JSON.parse(stored);
+            console.log('Loaded userData from localStorage:', data); // Debug log
             if (data && data.token && new Date(data.expiration) > new Date()) {
                 login(data.userId, data.token, data.email, localStorage.getItem('profilePhoto') || undefined, new Date(data.expiration), data.isAdmin, data.isBlocked);
             }
+        } else {
+            console.log('No userData found in localStorage'); // Debug log
         }
     }, [login]);
 

@@ -45,7 +45,8 @@ export default function LoginPage() {
                 return
             }
             if (res.ok) {
-                auth.login(data.userId, data.token, user.email, data.profilePhoto, data.isAdmin, data.isBlocked);
+                // Pass undefined for expirationDate, then isAdmin, then isBlocked
+                auth.login(data.userId, data.token, user.email, data.profilePhoto, undefined, data.isAdmin, data.isBlocked);
                 navigate('/')
             } else {
                 alert(data.message || `Login failed`);

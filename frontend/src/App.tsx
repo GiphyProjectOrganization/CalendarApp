@@ -23,11 +23,15 @@ import ContactsView from './components/contacts/ContactsView';
 import { AboutUs } from './components/aboutus/AboutUs';
 import EditEvent from './pages/Events/EditEvent';
 
-const ProtectedRoute = ({ children }) => {
-  const { isLoggedIn } = useContext(AuthContext);
+const ProtectedRoute = ({ children, adminOnly = false }) => {
+  const { isLoggedIn, isAdmin } = useContext(AuthContext);
 
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (adminOnly && !isAdmin) {
+    return <Navigate to="/" replace />;
   }
 
   return children;
@@ -78,7 +82,7 @@ function App() {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute adminOnly={true}>
                 <AdminDashboard />
               </ProtectedRoute>
             }
@@ -86,7 +90,7 @@ function App() {
           <Route
             path="/admin/manage-users"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute adminOnly={true}>
                 <ManageUsers />
               </ProtectedRoute>
             }
@@ -94,7 +98,7 @@ function App() {
           <Route
             path="/admin/manage-events"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute adminOnly={true}>
                 <ManageEvents />
               </ProtectedRoute>
             }
