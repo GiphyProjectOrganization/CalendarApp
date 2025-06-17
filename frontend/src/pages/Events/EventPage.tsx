@@ -140,34 +140,39 @@ const EventPage = () => {
         fetchEvent();
     }, [eventId]);
 
-    const handleRemoveParticipant = async (email: string) => {
-        if (email === event?.creatorEmail) {
-            alert("Cannot remove the event creator");
-            return;
-        }
+  const handleRemoveParticipant = async (email: string) => {
+    if (!auth.userId || auth.userId !== event?.createdBy) {
+      alert("Only the event creator can remove participants");
+      return;
+    }
 
-        try {
-            const response = await fetch(`/api/events/${eventId}/participants`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ email })
-            });
+    if (email === event?.creatorEmail) {
+      alert("Cannot remove the event creator");
+      return;
+    }
 
-            if (!response.ok) {
-            throw new Error('Failed to remove participant');
-            }
+    try {
+      const response = await fetch(`/api/events/${eventId}/participants`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ email })
+      });
 
-            setEvent(prev => prev ? {
-            ...prev,
-            participants: prev.participants.filter(p => p !== email)
-            } : null);
-        } catch (err) {
-            console.error('Error removing participant:', err);
-        }
-    };
+      if (!response.ok) {
+        throw new Error('Failed to remove participant');
+      }
+
+      setEvent(prev => prev ? {
+        ...prev,
+        participants: prev.participants.filter(p => p !== email)
+      } : null);
+    } catch (err) {
+      console.error('Error removing participant:', err);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -234,14 +239,16 @@ const EventPage = () => {
 
             <h1 className="text-3xl font-bold">{event.title}</h1>
 
-            <div className="flex flex-wrap items-center gap-2 text-sm text-base-content/80 mt-2">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-base-content/80 mb-4 mt-2">
               <span className="font-medium">Created by:</span>
               <span className="text-primary font-semibold">{event.creatorUsername || 'Unknown'}</span>
+              {auth.userEmail === event.creatorEmail && (
+                <span className="badge badge-primary">You</span>
+              )}
               <span className="text-base-content/50">|</span>
               {event.isDraft && <span className="badge badge-warning">Draft</span>}
               {event.isRecurring && <span className="badge badge-secondary">Recurring</span>}
             </div>
-          </div>
 
           <div className="prose max-w-none mb-8">
             <p className="text-base-content whitespace-pre-line">{event.description || 'No description provided.'}</p>
@@ -318,14 +325,14 @@ const EventPage = () => {
                             </div>
                           </div>
                           {auth.userId === event.createdBy && 
-                          participant !== event.creatorEmail && 
-                          participant !== auth.userEmail && (
-                              <button 
-                                className="btn btn-xs btn-ghost text-error"
-                                onClick={() => handleRemoveParticipant(participant)}
-                              >
-                                Remove
-                              </button>
+                          participant !== event.creatorEmail && (
+                            <button 
+                              className="btn btn-xs btn-ghost text-error"
+                              onClick={() => handleRemoveParticipant(participant)}
+                              disabled={participant === auth.userEmail}
+                            >
+                              Remove
+                            </button>
                           )}
                         </li>
                       ))}
@@ -405,7 +412,12 @@ const EventPage = () => {
           <div className="flex flex-wrap gap-4 pt-4">
             {auth.userEmail && auth.userEmail === event.creatorEmail && (
               <>
-                <button className="btn btn-primary">Edit Event</button>
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => navigate(`/events/edit/${eventId}`)}
+                >
+                  Edit Event
+                </button>
                 <button className="btn btn-error">Cancel Event</button>
               </>
             )}
@@ -419,6 +431,7 @@ const EventPage = () => {
 
         </div>
       </div>
+    </div>
     </div>
   );
 };

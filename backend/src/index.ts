@@ -409,6 +409,96 @@ app.get("/api/events", async (req, res) => {
   }
 });
 
+app.patch("/api/events/:eventId", authMiddleware, async (req: AuthRequest, res: Response) => {
+  const { eventId } = req.params;
+  const updates = req.body;
+
+  if (!req.userId) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  if (updates.title) {
+    if (!updates.title.trim()) {
+      res.status(400).json({ message: "Title is required" });
+      return;
+    }
+    if (updates.title.length < 3 || updates.title.length > 30) {
+      res.status(400).json({ message: "Title must be between 3 and 30 characters" });
+      return;
+    }
+  }
+
+  if (updates.description && updates.description.length > 500) {
+    res.status(400).json({ message: "Description must not exceed 500 characters" });
+    return;
+  }
+
+  if (updates.startDate || updates.startTime || updates.endDate || updates.endTime) {
+    const startDate = updates.startDate || req.body.originalStartDate;
+    const startTime = updates.startTime || req.body.originalStartTime;
+    const endDate = updates.endDate || req.body.originalEndDate;
+    const endTime = updates.endTime || req.body.originalEndTime;
+
+    if (!startDate || !startTime || !endDate || !endTime) {
+      res.status(400).json({ message: "Start and end date/time are required" });
+      return;
+    }
+
+    const startDateTime = new Date(`${startDate}T${startTime}`);
+    const endDateTime = new Date(`${endDate}T${endTime}`);
+
+    if (endDateTime <= startDateTime) {
+      res.status(400).json({ message: "End time must be after start time" });
+      return;
+    }
+  }
+
+  try {
+    const client = await connectDB();
+    const db = client.db("calendar");
+    const eventsCollection = db.collection("events");
+
+    const existingEvent = await eventsCollection.findOne({
+      _id: new ObjectId(eventId),
+      createdBy: req.userId
+    });
+
+    if (!existingEvent) {
+      res.status(404).json({ message: "Event not found or you don't have permission to edit it" });
+      return;
+    }
+
+    let locationUpdate = updates.location;
+    if (updates.location) {
+      locationUpdate = typeof updates.location === 'string'
+        ? { placeId: '', address: updates.location }
+        : updates.location;
+    }
+
+    const updateData = {
+      ...updates,
+      ...(updates.location && { location: locationUpdate }),
+      updatedAt: new Date().toISOString()
+    };
+
+    const result = await eventsCollection.updateOne(
+      { _id: new ObjectId(eventId) },
+      { $set: updateData }
+    );
+
+    if (result.modifiedCount === 0) {
+      res.status(400).json({ message: "No changes detected" });
+      return;
+    }
+
+    res.status(200).json({ message: "Event updated successfully!" });
+  } catch (err) {
+    console.error("Failed to update event:", err);
+    res.status(500).json({ message: "Failed to update event. Please try again." });
+  }
+});
+
 // GET single event by ID (public access)
 app.get("/api/events/:eventId", async (req, res, next) => {
   try {

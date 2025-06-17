@@ -174,5 +174,44 @@ export const eventService = {
       console.error('Failed to parse response:', text);
       throw new Error('Invalid response format');
     }
+  },
+
+  async updateEvent(
+    eventId: string,
+    eventData: Partial<Event> & { updatedAt: string }
+  ): Promise<{ message: string }> {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const formattedEventData = {
+      ...eventData,
+      location: typeof eventData.location === 'string'
+        ? eventData.location
+        : eventData.location && {
+            placeId: eventData.location.placeId,
+            address: eventData.location.address,
+            ...(eventData.location.coordinates && {
+              coordinates: eventData.location.coordinates
+            })
+          }
+    };
+
+    const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(formattedEventData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update event');
+    }
+
+    return response.json();
   }
 };
