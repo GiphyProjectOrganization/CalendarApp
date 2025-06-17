@@ -20,6 +20,7 @@ import AdminDashboard from './pages/Admin/Dashboard';
 import ManageUsers from './pages/Admin/ManageUsers';
 import ContactsView from './components/contacts/ContactsView';
 import { AboutUs } from './components/aboutus/AboutUs';
+import EditEvent from './pages/Events/EditEvent';
 
 const ProtectedRoute = ({ children }) => {
   const { isLoggedIn } = useContext(AuthContext);
@@ -89,6 +90,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/events/edit/:eventId" element={<ProtectedRoute><EditEvent /></ProtectedRoute>} />
           <Route path='/about-us' element={<AboutUs />} />
         </Routes>
         <Footer />
