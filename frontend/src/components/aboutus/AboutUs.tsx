@@ -278,7 +278,7 @@ export const AboutUs = () => {
     <div className="max-w-4xl mx-auto p-8 mt-10 rounded-xl shadow-lg border bg-base-100">
       <h2 className="text-4xl font-bold mb-6 text-center">About Us</h2>
       <p className="text-lg mb-6 leading-relaxed text-center max-w-3xl mx-auto">
-        This project is our final graduation project for Telerik Academy's
+        This project is our final graduation project for Telerik Academy's Alpha
         JavaScript Track. Our task was to create a calendar app that
         handles events and manages contact lists.
       </p>
