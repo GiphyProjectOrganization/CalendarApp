@@ -1,187 +1,92 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { adminService } from '../../services/adminService';
+import { Event } from '../../services/eventService';
+import { useAuth } from '../../hook/auth-hook';
+import { EventCard } from '../../components/events/EventCard';
 
-interface AdminEvent {
-  id: string;
-  title: string;
-  description: string;
-  startDate: string;
-  startTime: string;
-  endDate: string;
-  endTime: string;
-  createdBy: string;
-  creatorEmail: string;
-  isPublic: boolean;
-  isDraft: boolean;
-  participants: string[];
-  createdAt: string;
-}
+export const ManageEvents = () => {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { eventId } = useParams<{ eventId: string }>();
 
-const ManageEvents = () => {
-  const [events, setEvents] = useState<AdminEvent[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState<string>('');
 
-  const fetchEvents = async () => {
+  const { token } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSearch = async (e?: FormEvent) => {
+    if (e) e.preventDefault();
+    if (!token) {
+      setError('Authentication required.');
+      return;
+    }
     setLoading(true);
+    setError(null);
     try {
-      const response = await adminService.searchEvents(searchTerm, 1, 50);
-      setEvents(response.data);
-      setError('');
-    } catch (err) {
-      setError('Failed to load events.');
+      const response = await adminService.searchEvents(searchTerm);
+      setEvents(response.data as unknown as Event[]);
+    } catch (err: any) {
+      setError(err.message || 'Failed to search events.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchEvents();
+    handleSearch();
   }, []);
 
-  const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
-    if (!confirm(`Are you sure you want to delete the event "${eventTitle}"? This action cannot be undone.`)) {
+  const handleDelete = async (eventId: string) => {
+    if (!token) {
+      setError('Authentication required.');
       return;
     }
-
-    try {
-      await adminService.deleteEvent(eventId);
-      setEvents((prevEvents) =>
-        prevEvents.filter((event) => event.id !== eventId)
-      );
-      alert('Event deleted successfully');
-    } catch (err) {
-      alert('Failed to delete event.');
+    if (window.confirm('Are you sure you want to delete this event?')) {
+      try {
+        await adminService.deleteEvent(eventId);
+        setEvents(events.filter((event) => event.id !== eventId));
+      } catch (err: any) {
+        setError(err.message || 'Failed to delete event.');
+      }
     }
   };
 
-  const filteredEvents = events.filter(
-    (event) =>
-      (event.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (event.description?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (event.creatorEmail?.toLowerCase() || '').includes(searchTerm.toLowerCase())
-  );
-
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString();
-    } catch {
-      return dateString;
-    }
+  const handleEdit = () => {
+    navigate(`/events/edit/${eventId}`);
   };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return <p className="text-red-500 text-center">{error}</p>;
-  }
 
   return (
-    <div className="bg-base-100 shadow-md rounded-lg p-6">
-      <h2 className="text-2xl font-semibold mb-4 text-primary">Manage Events</h2>
-      
-      <div className="flex gap-2 mb-4">
-        <input
-          type="text"
-          placeholder="Search by title, description, or creator email..."
-          className="input input-bordered flex-1"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <button
-          onClick={fetchEvents}
-          className="btn btn-primary"
-        >
-          Search
-        </button>
-      </div>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Manage Events</h1>
+      <form onSubmit={handleSearch} className="mb-4">
+        <div className="flex">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search events by title, description..."
+            className="input input-bordered w-full max-w-xs"
+          />
+          <button type="submit" className="btn btn-primary ml-2">
+            Search
+          </button>
+        </div>
+      </form>
 
-      <div className="overflow-x-auto">
-        <table className="table table-zebra w-full">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Creator</th>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Participants</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredEvents.map((event) => (
-              <tr key={event.id}>
-                <td>
-                  <div>
-                    <div className="font-bold">{event.title}</div>
-                    <div className="text-sm text-base-content/70 truncate max-w-xs">
-                      {event.description || 'No description'}
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div className="text-sm">
-                    <div>{event.creatorEmail}</div>
-                    <div className="text-base-content/70">
-                      ID: {event.createdBy.slice(-6)}
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div className="text-sm">
-                    <div>{formatDate(event.startDate)}</div>
-                    <div className="text-base-content/70">
-                      {event.startTime} - {event.endTime}
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div className="flex flex-col gap-1">
-                    <span className={`badge badge-sm ${event.isPublic ? 'badge-success' : 'badge-info'}`}>
-                      {event.isPublic ? 'Public' : 'Private'}
-                    </span>
-                    {event.isDraft && (
-                      <span className="badge badge-sm badge-warning">Draft</span>
-                    )}
-                  </div>
-                </td>
-                <td>
-                  <span className="badge badge-outline">
-                    {event.participants.length} participants
-                  </span>
-                </td>
-                <td>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => window.open(`/events/${event.id}`, '_blank')}
-                      className="btn btn-sm btn-info"
-                    >
-                      View
-                    </button>
-                    <button
-                      onClick={() => handleDeleteEvent(event.id, event.title)}
-                      className="btn btn-sm btn-error"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {error && <p className="text-error">{error}</p>}
 
-      {filteredEvents.length === 0 && (
-        <p className="text-center text-gray-500 mt-4">No events found.</p>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {events.map((event) => (
+          <EventCard
+            key={event.id}
+            event={event}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        ))}
+      </div>
     </div>
   );
 };

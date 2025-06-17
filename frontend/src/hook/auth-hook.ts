@@ -38,8 +38,8 @@ export function useAuth(): AuthHook {
         setUserEmail(email);
         setProfilePhoto(profilePhoto || null);
         const expiration = expirationDate instanceof Date
-          ? expirationDate
-          : new Date(new Date().getTime() + 1000 * 60 * 60);
+            ? expirationDate
+            : new Date(new Date().getTime() + 1000 * 60 * 60);
         setTokenExpirationTime(expiration);
         localStorage.setItem(
             'userData',
@@ -60,6 +60,31 @@ export function useAuth(): AuthHook {
         setAdmin(false);
         setBlocked(false);
         localStorage.removeItem('userData');
+    }, []);
+
+    const fetchUserData = useCallback(async (token: string) => {
+        try {
+            const res = await fetch("http://localhost:5000/api/user/me", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            if (res.ok) {
+                const user = await res.json();
+                setAdmin(!!user.isAdmin);
+                setBlocked(!!user.isBlocked);
+                setProfilePhoto(user.photoBase64 || null);
+                const stored = localStorage.getItem('userData');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    data.isAdmin = !!user.isAdmin;
+                    data.isBlocked = !!user.isBlocked;
+                    localStorage.setItem('userData', JSON.stringify(data));
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
     }, []);
 
     useEffect(() => {
@@ -83,6 +108,12 @@ export function useAuth(): AuthHook {
             console.log('No userData found in localStorage'); // Debug log
         }
     }, [login]);
+
+    useEffect(() => {
+        if (token) {
+            fetchUserData(token);
+        }
+    }, [token, fetchUserData]);
 
     return { token, userId, userEmail, login, logout, profilePhoto, isAdmin, isBlocked };
 }
