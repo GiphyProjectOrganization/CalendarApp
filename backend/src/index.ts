@@ -1365,8 +1365,24 @@ app.get('/api/admin/events', adminMiddleware, async (req, res) => {
     const totalPages = Math.ceil(totalCount / parseInt(limit as string));
     const currentPage = parseInt(page as string);
     
+    const formattedEvents = events.map(event => ({
+      id: event._id.toString(),
+      title: event.title,
+      description: event.description || '',
+      startDate: event.startDate,
+      startTime: event.startTime,
+      endDate: event.endDate,
+      endTime: event.endTime,
+      createdBy: event.createdBy,
+      creatorEmail: event.creatorEmail || '',
+      isPublic: event.isPublic || false,
+      isDraft: event.isDraft || false,
+      participants: event.participants || [],
+      createdAt: event.createdAt || new Date().toISOString()
+    }));
+    
     res.json({
-      data: events,
+      data: formattedEvents,
       totalCount,
       currentPage,
       totalPages,
@@ -1374,6 +1390,7 @@ app.get('/api/admin/events', adminMiddleware, async (req, res) => {
       hasPreviousPage: currentPage > 1
     });
   } catch (error) {
+    console.error('Failed to fetch events:', error);
     res.status(500).json({ message: 'Failed to fetch events' });
   }
 });

@@ -144,19 +144,36 @@ export const adminService = {
       limit: limit.toString(),
     });
 
-    const response = await fetch(`${API_BASE_URL}/admin/events?${params}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/events?${params}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to fetch events');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Admin events fetch failed:', response.status, errorText);
+
+        let errorMessage = 'Failed to fetch events';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorMessage;
+        } catch {
+          // errorText is not JSON, use default message
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log('Raw events data:', data); // Debug log
+      return data;
+    } catch (err) {
+      console.error('Network error in searchEvents:', err);
+      throw err;
     }
-
-    return response.json();
   },
 
   async deleteEvent(eventId: string): Promise<{ message: string }> {

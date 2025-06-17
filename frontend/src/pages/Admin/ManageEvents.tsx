@@ -26,11 +26,14 @@ const ManageEvents = () => {
   const fetchEvents = async () => {
     setLoading(true);
     try {
+      console.log('Fetching events with search term:', searchTerm); // Debug log
       const response = await adminService.searchEvents(searchTerm, 1, 50);
+      console.log('Events response:', response); // Debug log
       setEvents(response.data);
       setError('');
     } catch (err) {
-      setError('Failed to load events.');
+      console.error('Error fetching events:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load events.');
     } finally {
       setLoading(false);
     }
