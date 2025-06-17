@@ -149,7 +149,7 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
     const isHoliday = weekHolidays.has(dayIdx);
 
     let classes = [
-      'min-h-[60px]',
+      'min-h-[40px]',
       'border-t',
       'border-l',
       'border-base-300',
@@ -333,20 +333,23 @@ export function WeekView({ startDate = new Date() }: WeekViewProps) {
                   {isHoliday && hourIdx === 0 && (
                     <div className="absolute top-0 left-0 right-0 h-1 bg-error/50"></div>
                   )}
-                  {timeSlotEvents.map((event) => (
-                    isEventStartingAtHour(event, hourIdx) ? (
-                      <EventCard 
-                        key={event.id}
-                        event={event}
-                        compact={true}
-                      />
-                    ) : (
-                      <div 
-                        key={`${event.id}-cont`}
-                        className="absolute inset-0.5 bg-primary/20"
-                      />
-                    )
-                  ))}
+                  
+                  <div className="flex flex-col gap-1 p-1 z-10 relative">
+                    {timeSlotEvents.map((event) => (
+                      isEventStartingAtHour(event, hourIdx) ? (
+                        <EventCard 
+                          key={event.id}
+                          event={event}
+                          compact={true}
+                        />
+                      ) : (
+                        <div 
+                          key={`${event.id}-cont`}
+                          className="bg-primary/20 rounded h-2"
+                        />
+                      )
+                    ))}
+                  </div>
                 </div>
               );
             })}

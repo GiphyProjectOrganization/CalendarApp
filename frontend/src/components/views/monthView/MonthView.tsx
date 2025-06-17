@@ -6,6 +6,7 @@ import 'date-holidays-parser';
 import { useNavigate } from 'react-router-dom';
 import Holidays from 'date-holidays';
 import { UserLocation } from '../../../hook/userLocation-hook';
+import { eventService, Event } from '../../../services/eventService';
 
 const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -16,8 +17,9 @@ export const MonthView = () => {
   const [isHexTheme, setIsHexTheme] = useState(false);
   const [countryCode, setCountryCode] = useState<string | undefined>();
   const { location, isLoading, error } = UserLocation();
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
+  const [participatingEvents, setParticipatingEvents] = useState<Event[]>([]);
 
   const handleDateClick = (date: Date) => {
     const yyyy = date.getFullYear();
@@ -38,7 +40,6 @@ export const MonthView = () => {
     };
 
     updateHexTheme();
-
     const observer = new MutationObserver(updateHexTheme);
     observer.observe(document.documentElement, {
       attributes: true,
@@ -73,9 +74,7 @@ export const MonthView = () => {
     const holiday = hd?.isHoliday(date);
     if (!holiday) return [];
     const entries = Array.isArray(holiday) ? holiday : [holiday];
-    return entries
-      .filter(e => e.type === 'public')
-      .map(e => e.name);
+    return entries.filter(e => e.type === 'public').map(e => e.name);
   };
 
   const isCurrentMonth = (date: Date) =>
@@ -101,24 +100,54 @@ export const MonthView = () => {
     return chunks;
   };
 
+  const getDateKey = (date: Date) => {
+    // Use local date to avoid timezone issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const events = await eventService.getParticipatingEvents(token);
+        setParticipatingEvents(events);
+      } catch (err) {
+        console.error('Failed to fetch participating events:', err);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  const eventsByDate = useMemo(() => {
+    const map: Record<string, Event[]> = {};
+    participatingEvents.forEach(event => {
+      // Normalize the event date to match our date key format
+      const eventDate = new Date(event.startDate);
+      const dateKey = getDateKey(eventDate);
+      if (!map[dateKey]) map[dateKey] = [];
+      map[dateKey].push(event);
+    });
+    return map;
+  }, [participatingEvents]);
+
   return (
     <div className="max-w-5xl bg-white-100 mx-auto p-4">
       <div className="mb-4 flex flex-col items-center">
         <div className="flex items-center justify-between w-full">
-          <button
-            onClick={prevMonth}
-            className="px-2 py-1 bg-secondary text-secondary-content rounded"
-          >
+          <button onClick={prevMonth} className="px-2 py-1 bg-secondary text-secondary-content rounded">
             ←
           </button>
-
           <h2
             className="text-xl font-bold text-base-content underline cursor-pointer"
             onClick={() => setShowMonthYearPicker(!showMonthYearPicker)}
           >
             {new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} {currentYear}
           </h2>
-
           <div className="flex items-center space-x-2">
             <button
               onClick={() => {
@@ -129,10 +158,7 @@ export const MonthView = () => {
             >
               Today
             </button>
-            <button
-              onClick={nextMonth}
-              className="px-2 py-1 bg-secondary text-secondary-content rounded"
-            >
+            <button onClick={nextMonth} className="px-2 py-1 bg-secondary text-secondary-content rounded">
               →
             </button>
           </div>
@@ -151,7 +177,6 @@ export const MonthView = () => {
                 </option>
               ))}
             </select>
-
             <select
               value={currentYear}
               onChange={(e) => setCurrentYear(parseInt(e.target.value))}
@@ -163,7 +188,6 @@ export const MonthView = () => {
                 </option>
               ))}
             </select>
-
             <button
               onClick={() => setShowMonthYearPicker(false)}
               className="px-2 py-1 bg-primary text-primary-content rounded"
@@ -193,21 +217,25 @@ export const MonthView = () => {
               {week.map((date, idx) => {
                 const isWeekendDate = isWeekend(date);
                 const holidayNames = hd ? isHoliday(date) : [];
+                const dateKey = getDateKey(date);
+                const eventCount = (eventsByDate[dateKey] || []).length;
+
                 return (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     onClick={() => handleDateClick(date)}
                     className={`hex-outer ${!isCurrentMonth(date) ? 'opacity-50' : ''} ${
                       isToday(date) ? 'today' : ''
-                    } ${
-                      isWeekendDate && isCurrentMonth(date) ? 'weekend' : ''
-                    }`}
+                    } ${isWeekendDate && isCurrentMonth(date) ? 'weekend' : ''}`}
                   >
                     <div className="hex-inner">
                       <div>{date.getDate()}</div>
                       {holidayNames.length > 0 && (
-                        <div className="holiday-badge">
-                          {holidayNames[0]}
+                        <div className="holiday-badge">{holidayNames[0]}</div>
+                      )}
+                      {eventCount > 0 && (
+                        <div className="event-badge">
+                          {eventCount} Event{eventCount > 1 ? 's' : ''}
                         </div>
                       )}
                     </div>
@@ -221,6 +249,8 @@ export const MonthView = () => {
         <div className="grid grid-cols-7 text-base-content relative z-10 grid-view">
           {dates.map((date, idx) => {
             const holidayNames = hd ? isHoliday(date) : [];
+            const dateKey = getDateKey(date);
+            const eventCount = (eventsByDate[dateKey] || []).length;
 
             const cellClasses = [
               'relative border rounded-sm p-2 h-24 text-sm transition-transform hover:scale-105 hover:shadow-lg hover:z-10 cursor-pointer',
@@ -239,8 +269,13 @@ export const MonthView = () => {
               >
                 <div>{date.getDate()}</div>
                 {holidayNames.length > 0 && (
-                  <div className="mt-1 text-xs bg-error-content text-error px-2 py-0.5 rounded-full inline-block">
+                  <div className="mt-1 text-xs bg-error-content text-error px-2 py-0.5 rounded-full block">
                     {holidayNames[0]}
+                  </div>
+                )}
+                {eventCount > 0 && (
+                  <div className="mt-1 text-xs bg-info text-info-content px-2 py-0.5 rounded-full block">
+                    {eventCount} Event{eventCount > 1 ? 's' : ''}
                   </div>
                 )}
               </div>
