@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { adminService } from '../../services/adminService';
 import { Event } from '../../services/eventService';
 import { useAuth } from '../../hook/auth-hook';
@@ -10,6 +10,8 @@ export const ManageEvents = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { eventId } = useParams<{ eventId: string }>();
+
 
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -51,8 +53,8 @@ export const ManageEvents = () => {
     }
   };
 
-  const handleEdit = (event: Event) => {
-    navigate(`/events/edit/${event.id}`);
+  const handleEdit = () => {
+    navigate(`/events/edit/${eventId}`);
   };
 
   return (
