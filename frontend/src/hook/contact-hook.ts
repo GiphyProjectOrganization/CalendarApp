@@ -18,6 +18,14 @@ interface ContactList {
 interface ContactListWithContacts extends ContactList {
   contacts: Contact[];
 }
+interface UserSearchResult {
+  id: string;
+  email: string;
+  username: string;
+  name: string;
+  phoneNumber: string;
+  profilePhoto?: string;
+}
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -43,24 +51,26 @@ export const useContacts = () => {
     selectedList: ContactListWithContacts | null;
     loading: boolean;
     error: string | null;
+    searchResults: UserSearchResult[];
+    isSearching: boolean;
   }>({
     lists: [],
     contacts: [],
     selectedList: null,
     loading: false,
     error: null,
+    searchResults: [],
+    isSearching: false,
   });
 
   const abortControllers = useRef<AbortController[]>([]);
 
-  // Cleanup pending
   useEffect(() => {
     return () => {
       abortControllers.current.forEach(controller => controller.abort());
     };
   }, []);
-  
-  //this handles errors
+
   const makeRequest = useCallback(async <T>(
     requestFn: (signal?: AbortSignal) => Promise<T>,
     {
@@ -87,6 +97,30 @@ export const useContacts = () => {
         !skipLoading && setState(prev => ({ ...prev, loading: false }));
       }
     }
+  }, []);
+
+  const searchUsers = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setState(prev => ({ ...prev, searchResults: [], isSearching: false }));
+      return [];
+    }
+
+    try {
+      setState(prev => ({ ...prev, isSearching: true }));
+      const results = await fetchAPI<UserSearchResult[]>(`/users/lookup?query=${encodeURIComponent(query)}`);
+      setState(prev => ({ ...prev, searchResults: results }));
+      return results;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Search failed';
+      setState(prev => ({ ...prev, error: message }));
+      throw new Error(message);
+    } finally {
+      setState(prev => ({ ...prev, isSearching: false }));
+    }
+  }, []);
+
+  const clearSearch = useCallback(() => {
+    setState(prev => ({ ...prev, searchResults: [] }));
   }, []);
 
   const fetchLists = useCallback(async () => {
@@ -200,6 +234,8 @@ export const useContacts = () => {
     createContact,
     updateContact,
     deleteContact,
+    searchUsers,
+    clearSearch,
     setSelectedList: (list: ContactListWithContacts | null) => 
       setState(prev => ({ ...prev, selectedList: list })),
   };

@@ -17,6 +17,8 @@ import { EditProfile } from './components/profile/EditProfile';
 import EventPage from './pages/Events/EventPage';
 import { UserProfile } from './components/profile/UserProfile';
 import AdminDashboard from './pages/Admin/Dashboard';
+import ContactsView from './components/contacts/ContactsView';
+import { AboutUs } from './components/aboutus/AboutUs';
 
 const ProtectedRoute = ({ children }) => {
   const { isLoggedIn } = useContext(AuthContext);
@@ -32,9 +34,21 @@ function App() {
   const { token, userId, userEmail, logout, login, profilePhoto, isAdmin, isBlocked } = useAuth();
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn: !!token, userId, userEmail, token, login, logout, profilePhoto, isAdmin, isBlocked }}>
-      <BrowserRouter>
-        <Header />
+    <BrowserRouter>
+      <AuthContext.Provider value={{ 
+        isLoggedIn: !!token,
+        token,
+        userId,
+        userEmail,
+        profilePhoto,
+        isAdmin,
+        isBlocked,
+        login,
+        logout
+      }}>
+        <Header onMenuClick={function (): void {
+          throw new Error('Function not implemented.');
+        }} />
         <Routes>
           <Route path='/register' element={<Register />} />
           <Route path='/' element={<MonthView />} />
@@ -56,6 +70,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/contacts" element={<ContactsView />} />
           <Route path="/events/:eventId" element={<EventPage />} />
           <Route
             path="/admin"
@@ -65,10 +80,11 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path='/about-us' element={<AboutUs />} />
         </Routes>
-      </BrowserRouter>
-      <Footer />
-    </AuthContext.Provider>
+        <Footer />
+      </AuthContext.Provider>
+    </BrowserRouter>
   );
 }
 

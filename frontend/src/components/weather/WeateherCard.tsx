@@ -71,10 +71,10 @@ export function WeatherCard({ day, unit, locationName }: WeatherCardProps) {
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-base-content/80">
           <div><span className="font-semibold">UV Index:</span> {day.uvi ?? "N/A"}</div>
           <div><span className="font-semibold">Humidity:</span> {day.humidity ?? "N/A"}%</div>
-          <div><span className="font-semibold">Sunrise:</span> 
+          <div><span className="font-semibold">Sunrise: </span> 
             {day.sunrise ? new Date(day.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
           </div>
-          <div><span className="font-semibold">Sunset:</span> 
+          <div><span className="font-semibold">Sunset: </span> 
             {day.sunset ? new Date(day.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
           </div>
         </div>

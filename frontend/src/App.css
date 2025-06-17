@@ -1,10 +1,29 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: 'MyCustomFont';
+  font-family: 'CubaoRegular';
   src: url('/src/fonts/Cubao_Free_Regular.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'CubaoNarrow';
+  src: url('/src/fonts/Cubao_Free_Narrow.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  .font-cubao {
+    font-family: 'CubaoRegular', ui-sans-serif, system-ui, sans-serif !important;
+  }
+  
+  .font-cubaoNarrow {
+    font-family: 'CubaoNarrow', ui-sans-serif, system-ui, sans-serif !important;
+  }
 }
 
 @plugin "daisyui";
@@ -33,6 +52,7 @@
 
   --color-info: #3ABFF8;
   --color-success: #36D399;
+  --color-success-content: #e5e5e5;
   --color-warning: #fbbd23;
   --color-error: #B91C1C;
   --color-error-content: #ffffff;
@@ -93,6 +113,7 @@
 
   --color-info: #80DED9;   /* aqua mint */
   --color-success: #AEECEF; /* pale cyan */
+  --color-success-content: #53599A;
   --color-warning: #fbbd23;
   --color-error: #F87272;
 }
@@ -121,7 +142,8 @@
   --color-base-content: #1a1a1a;
 
   --color-info: #6cb2eb;
-  --color-success: #36D399;
+  --color-success: #ffc300;
+  --color-success-content: #E11D48;
   --color-warning: #ffc300; /* mikado-yellow */
   --color-error: #E11D48;       /* deep rose red */
   --color-error-content: #ffffff;

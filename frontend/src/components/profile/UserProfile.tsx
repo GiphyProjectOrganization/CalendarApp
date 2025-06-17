@@ -2,18 +2,16 @@ import React, { useContext, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ThemeContext } from "../contexts/theme/ThemeContext";
 
-interface UserProfileProps {
-    photoBase64?: string;
-    username: string;
-    email: string;
-    phoneNumber: string;
-}
-
-export const UserProfile: React.FC = () => {
+export const UserProfile = () => {
     const { userId } = useParams<{ userId: string }>();
     const [user, setUser] = useState<{ photoBase64?: string; username: string; name?: string; email: string; phoneNumber: string } | null>(null);
     const [loading, setLoading] = useState(true);
+    const [adding, setAdding] = useState(false);
+    const [added, setAdded] = useState(false);
     const { theme } = useContext(ThemeContext);
+    const [existingContactId, setExistingContactId] = useState<string | null>(null);
+
+    const currentUserId = localStorage.getItem("currentUserId") || "";
 
     let userPropStyle: React.CSSProperties = { color: "#FF7800" };
     if (theme === "ocean") userPropStyle = { color: '#068D9D' };
@@ -21,27 +19,109 @@ export const UserProfile: React.FC = () => {
 
     useEffect(() => {
         if (!userId) return;
+
         setLoading(true);
+
         fetch(`http://localhost:5000/api/users/${userId}`)
             .then(res => {
-                if (!res.ok) throw new Error("User not found");
-                return res.json();
+            if (!res.ok) throw new Error("User not found");
+            return res.json();
             })
             .then(data => {
-                setUser({
-                    photoBase64: data.profilePhoto,
-                    username: data.username,
-                    name: data.name,
-                    email: data.email,
-                    phoneNumber: data.phoneNumber,
-                });
-                setLoading(false);
+            setUser({
+                photoBase64: data.profilePhoto,
+                username: data.username,
+                name: data.name,
+                email: data.email,
+                phoneNumber: data.phoneNumber,
+            });
+            setLoading(false);
+            setAdded(false);
+
+            return fetch("http://localhost:5000/api/contacts", {
+                headers: {
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
+                }
+            });
+            })
+            .then(res => {
+            if (!res.ok) throw new Error("Failed to fetch contacts");
+            return res.json();
+            })
+            .then((contacts: Array<{ id: string, userId: string }>) => {
+            const contact = contacts.find(c => c.userId === userId);
+            if (contact) {
+                setExistingContactId(contact.id);
+            } else {
+                setExistingContactId(null);
+            }
             })
             .catch(() => {
-                setUser(null);
-                setLoading(false);
+            setUser(null);
+            setLoading(false);
             });
     }, [userId]);
+
+
+    const handleAddContact = async () => {
+        if (adding || added) return; 
+
+        setAdding(true);
+        try {
+            const res = await fetch("http://localhost:5000/api/contacts", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
+            },
+            body: JSON.stringify({
+                userId: userId, 
+                listIds: []     
+            })
+            });
+
+            if (!res.ok) {
+            const data = await res.json();
+            alert(`Error: ${data.message}`);
+            setAdding(false);
+            return;
+            }
+
+            alert("Contact added successfully!");
+            setAdded(true);
+        } catch (error) {
+            alert("Failed to add contact");
+            console.error(error);
+        } finally {
+            setAdding(false);
+        }
+    };
+
+    const handleDeleteContact = async () => {
+        if (!existingContactId) return;
+
+        try {
+            const res = await fetch(`http://localhost:5000/api/contacts/${existingContactId}`, {
+            method: "DELETE",
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
+            }
+            });
+
+            if (!res.ok) {
+            const data = await res.json();
+            alert(`Error: ${data.message}`);
+            return;
+            }
+
+            alert("Contact deleted successfully!");
+            setExistingContactId(null);
+            setAdded(false);
+        } catch (error) {
+            alert("Failed to delete contact");
+            console.error(error);
+        }
+    };
 
     if (loading) return <div>Loading...</div>;
     if (!user) return <div>User not found.</div>;
@@ -67,31 +147,51 @@ export const UserProfile: React.FC = () => {
                             </svg>
                         )}
                     </div>
-                    <h1 className="font-cubao mr-1">Welcome, {user.username}</h1>
-                    <span className="font-cubao mr-1 ">Profile Overview:</span>
+                    <h1 className="font-cubao mr-1">This is {user.username}</h1>
+                    <span className="text-3xl font-cubaoNarrow mr-1 ">Profile Overview:</span>
                 </div>
                 <div className="space-y-2 w-full">
                     <div className="flex items-center gap-2">
-                        <span className="font-cubao mr-1">Full name:</span>
-                        <span className="font-cubao mr-1 break-all" style={userPropStyle}>{user.name}</span>
+                        <span className="text-2xl text-accent font-cubaoNarrow mr-1">Full name:</span>
+                        <span className="text-2xl font-cubaoNarrow mr-1 break-all" style={userPropStyle}>{user.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="font-cubao mr-1">Email:</span>
-                        <span className="font-cubao mr-1 break-all" style={userPropStyle}>{user.email}</span>
+                        <span className="text-2xl text-accent font-cubaoNarrow mr-1">Email:</span>
+                        <span className="text-2xl font-cubaoNarrow mr-1 break-all" style={userPropStyle}>{user.email}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="font-cubao mr-1">Phone:</span>
-                        <span className="font-cubao mr-1 break-all" style={userPropStyle}>{user.phoneNumber}</span>
+                        <span className="text-2xl text-accent font-cubaoNarrow mr-1">Phone:</span>
+                        <span className="text-2xl font-cubaoNarrow mr-1 break-all" style={userPropStyle}>{user.phoneNumber}</span>
                     </div>
-                    <div className="flex justify-end mt-6">
+
+                {currentUserId !== userId && (
+                    <div className="flex justify-between items-center mt-6">
                         <Link
-                            className="px-5 py-2 rounded-lg outline-1 font-bold transition-transform duration-200 hover:scale-110"
-                            type="button"
-                            to='/'
+                        className="px-5 py-2 rounded-lg outline-1 font-bold transition-transform duration-200 hover:scale-110"
+                        type="button"
+                        to="/"
                         >
-                            Back to home page
+                        Back to home page
                         </Link>
+
+                        {existingContactId ? (
+                        <button
+                            className="btn btn-danger px-5 py-2 rounded-lg font-bold hover:scale-110 transition-transform duration-200"
+                            onClick={handleDeleteContact}
+                        >
+                            Delete Contact
+                        </button>
+                        ) : (
+                        <button
+                            className="btn btn-primary px-5 py-2 rounded-lg font-bold hover:scale-110 transition-transform duration-200"
+                            onClick={handleAddContact}
+                            disabled={adding || added}
+                        >
+                            {adding ? "Adding..." : added ? "Added" : "Add Contact"}
+                        </button>
+                        )}
                     </div>
+                )}
                 </div>
             </div>
         </div>

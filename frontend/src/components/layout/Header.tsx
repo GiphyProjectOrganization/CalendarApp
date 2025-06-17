@@ -6,16 +6,19 @@ import { WeatherForecast } from "../weather/WeatherForecast";
 import { AuthContext } from "../contexts/authContext/authContext";
 import './Header.css';
 import { useAuth } from "../../hook/auth-hook";
-import { FaUserCircle } from "react-icons/fa";
+import { FiMenu, FiPlus, FiUsers, FiUser, FiEdit, FiLogOut } from 'react-icons/fi';
+interface HeaderProps {
+  onMenuClick: () => void;
+}
 
-export function Header() {
+export function Header({ onMenuClick }: HeaderProps) {
   const { isLoggedIn, logout, profilePhoto } = useContext(AuthContext);
   const navigate = useNavigate();
-
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchType, setSearchType] = useState<"users" | "events">("users");
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   //backend
@@ -39,22 +42,33 @@ export function Header() {
     searchTimeout.current = setTimeout(async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(
-          `http://localhost:5000/api/users/lookup?query=${encodeURIComponent(value)}`,
-          {
-            headers: {
-              "Authorization": token ? `Bearer ${token}` : "",
-            },
-          }
-        );
-        if (!res.ok) {
-          throw new Error("Failed to search users");
+        let res, data;
+        if (searchType === "users") {
+          res = await fetch(
+            `http://localhost:5000/api/users/lookup?query=${encodeURIComponent(value)}`,
+            {
+              headers: {
+                "Authorization": token ? `Bearer ${token}` : "",
+              },
+            }
+          );
+          if (!res.ok) throw new Error("Failed to search users");
+          data = await res.json();
+        } else {
+          res = await fetch(
+            `http://localhost:5000/api/events`
+          );
+          if (!res.ok) throw new Error("Failed to search events");
+          const allEvents = await res.json();
+          data = allEvents.filter(event =>
+            event.title?.toLowerCase().includes(value.toLowerCase()) ||
+            event.description?.toLowerCase().includes(value.toLowerCase())
+          );
         }
-        const data = await res.json();
         setSearchResults(data);
         setIsSearching(false);
       } catch (err) {
-        setSearchError("Error searching users");
+        setSearchError("Error searching " + searchType);
         setIsSearching(false);
       }
     }, 300);
@@ -63,7 +77,12 @@ export function Header() {
   return (
     <div className="navbar bg-base-100 shadow-md">
       <div className="navbar-start">
-        <Link to="/" className="font-cubao mr-1">TimeBuddy</Link>
+        {isLoggedIn && (
+          <label htmlFor="sidebar-toggle" className="btn btn-ghost btn-circle lg:hidden">
+            <FiMenu className="w-5 h-5" />
+          </label>
+        )}
+        <Link to="/" className="font-cubao ml-2">TimeBuddy</Link>
         <ThemeSwap />
       </div>
 
@@ -90,12 +109,36 @@ export function Header() {
           <div tabIndex={0} className="dropdown-content z-[1] p-2 shadow bg-base-100 rounded-box w-72 mt-2">
             <input
               type="text"
-              placeholder="Search users..."
+              placeholder={`Search ${searchType}...`}
               className="input input-bordered w-full"
               value={searchQuery}
               onChange={handleSearchChange}
               autoComplete="off"
             />
+            <div className="flex gap-4 mt-2 mb-2 justify-center">
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input
+                  type="radio"
+                  name="searchType"
+                  value="users"
+                  checked={searchType === "users"}
+                  onChange={() => setSearchType("users")}
+                  className="radio radio-xs"
+                />
+                <span className="text-xs">Users</span>
+              </label>
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input
+                  type="radio"
+                  name="searchType"
+                  value="events"
+                  checked={searchType === "events"}
+                  onChange={() => setSearchType("events")}
+                  className="radio radio-xs"
+                />
+                <span className="text-xs">Events</span>
+              </label>
+            </div>
 
             {isSearching && (
               <div className="mt-2 text-center text-xs text-gray-500">Searching...</div>
@@ -111,7 +154,7 @@ export function Header() {
                 className=" mt-2 max-h-64 overflow-y-auto flex flex-col gap-1"
                 style={{ minWidth: "16rem" }}
               >
-                {searchResults.map(user => (
+                {searchType === "users" && searchResults.map(user => (
                   <li
                     key={user.id}
                     className="flex flex-col items-start py-2 px-2 hover:bg-primary hover:text-primary-content transition-colors cursor-pointer"
@@ -133,6 +176,21 @@ export function Header() {
                         <span className="text-xs">{user.phoneNumber}</span>
                       </button>
                     </div>
+                  </li>
+                ))}
+                {searchType === "events" && searchResults.map(event => (
+                  <li
+                    key={event.id}
+                    className="flex flex-col items-start py-2 px-2 hover:bg-primary hover:text-primary-content transition-colors cursor-pointer"
+                  >
+                    <button
+                      className="flex flex-col w-full text-left"
+                      onClick={() => navigate(`/events/${event.id}`)}
+                    >
+                      <span className="font-semibold text-base">{event.title}</span>
+                      <span className="text-xs">{event.description}</span>
+                      <span className="text-xs">{event.startDate} {event.startTime}</span>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -192,6 +250,7 @@ export function Header() {
                   to="/myProfileCard"
                   className="text-base text-base-content hover:bg-accent hover:text-accent-content"
                 >
+                  <FiUser className="inline-block w-5 h-5" />
                   My Profile
                 </NavLink>
               </li>
@@ -200,14 +259,27 @@ export function Header() {
                   to="/editProfile"
                   className="text-base text-base-content hover:bg-accent hover:text-accent-content"
                 >
+                  <FiEdit className="inline-block w-5 h-5" />
                   Edit Profile
                 </NavLink>
               </li>
+              
+              <li>
+                <NavLink
+                  to="/contacts"
+                  className="flex items-center gap-2 text-base text-base-content hover:bg-accent hover:text-accent-content"
+                >
+                  <FiUsers className="inline-block w-5 h-5" />
+                  Contacts
+                </NavLink>
+              </li>
+
               <li>
                 <button
                   onClick={logout}
                   className="text-base text-base-content hover:bg-error hover:text-error-content"
                 >
+                  <FiLogOut className="inline-block w-5 h-5" />
                   Sign out
                 </button>
               </li>
