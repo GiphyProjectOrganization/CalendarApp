@@ -1,13 +1,19 @@
-import React, { useState, ChangeEvent, useContext, useEffect } from 'react';
+import {
+  useState,
+  useEffect,
+  ChangeEvent,
+  useContext,
+} from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '../../components/contexts/authContext/authContext';
 import { eventService, Event } from '../../services/eventService';
+import { adminService } from '../../services/adminService';
 import { UserLocation } from '../../hook/userLocation-hook';
 import PlacePicker from '../../components/map/PlacePicker';
 
 const EditEvent = () => {
   const navigate = useNavigate();
-  const { eventId } = useParams();
+  const { eventId } = useParams<{ eventId: string }>();
   const auth = useContext(AuthContext);
   const [originalEvent, setOriginalEvent] = useState<Event | null>(null);
   const [event, setEvent] = useState<Event>({
@@ -61,7 +67,10 @@ const EditEvent = () => {
     const fetchEventAndUser = async () => {
       try {
         if (eventId) {
-          const eventData = await eventService.getEventById(eventId);
+          const eventData = auth.isAdmin
+            ? await adminService.getEventByIdForAdmin(eventId)
+            : await eventService.getEventById(eventId);
+          
           setOriginalEvent(eventData);
           setEvent(eventData);
           setShowRecurrenceOptions(eventData.isRecurring);
@@ -91,7 +100,7 @@ const EditEvent = () => {
     };
 
     fetchEventAndUser();
-  }, [auth.isLoggedIn, auth.token, eventId, navigate]);
+  }, [auth.isLoggedIn, auth.token, auth.isAdmin, eventId, navigate]);
 
   const updateEvent =
     (field: keyof Event) =>
@@ -263,9 +272,12 @@ const EditEvent = () => {
     };
 
     try {
-        const result = await eventService.updateEvent(eventId, eventData);
+        const result = auth.isAdmin
+          ? await adminService.updateEvent(eventId, eventData)
+          : await eventService.updateEvent(eventId, eventData);
+
         alert(result.message);
-        navigate(`/events/${eventId}`);
+        navigate(auth.isAdmin ? '/admin/manage-events' : `/events/${eventId}`);
     } catch (err) {
         console.error('Failed to update event:', err);
         alert(err instanceof Error ? err.message : 'Failed to update event. Please try again.');
@@ -316,16 +328,13 @@ const EditEvent = () => {
     );
   }
 
-  if (originalEvent.createdBy !== auth.userId) {
+  if (originalEvent.createdBy !== auth.userId && !auth.isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-primary mb-4">Unauthorized</h2>
-          <p className="text-base-content mb-4">You can only edit events you created</p>
-          <button 
-            onClick={() => navigate('/calendar')} 
-            className="btn btn-primary"
-          >
+          <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
+          <p>You do not have permission to edit this event.</p>
+          <button onClick={() => navigate('/calendar')} className="btn btn-primary mt-4">
             Back to Calendar
           </button>
         </div>

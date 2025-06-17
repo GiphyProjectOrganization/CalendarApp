@@ -12,7 +12,6 @@ export const ManageEvents = () => {
   const [error, setError] = useState<string | null>(null);
   const { eventId } = useParams<{ eventId: string }>();
 
-
   const { token } = useAuth();
   const navigate = useNavigate();
 

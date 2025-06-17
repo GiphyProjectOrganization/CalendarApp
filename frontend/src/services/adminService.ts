@@ -1,3 +1,5 @@
+import { Event } from './eventService';
+
 export interface User {
   id: string;
   username: string;
@@ -219,6 +221,27 @@ export const adminService = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Failed to update event');
+    }
+
+    return response.json();
+  },
+
+  async getEventByIdForAdmin(eventId: string): Promise<Event> {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/events/${eventId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch event');
     }
 
     return response.json();
