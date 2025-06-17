@@ -21,19 +21,20 @@ const AdminDashboard = () => {
       navigate('/login');
       return;
     }
-    // TODO: Implement a robust isAdmin check from auth context
-    // if (!auth.isAdmin) {
-    //   alert('Access denied: You are not an administrator.');
-    //   navigate('/');
-    //   return;
-    // }
+
+    if (!auth.isAdmin) {
+      alert('Access denied: You are not an administrator.');
+      navigate('/');
+      return;
+    }
 
     const fetchStats = async () => {
       setLoadingStats(true);
       setStatsError(null);
+
       try {
-        // Assuming getSystemStats returns at least totalUsers and totalEvents
         const systemStatsData = await adminService.getSystemStats();
+
         setStats({
           totalUsers: systemStatsData.totalUsers || 0,
           totalEvents: systemStatsData.totalEvents || 0,
@@ -49,7 +50,7 @@ const AdminDashboard = () => {
     };
 
     fetchStats();
-  }, [auth.isLoggedIn, navigate]); // Add auth.isAdmin here when implemented
+  }, [auth.isLoggedIn, navigate, auth.isAdmin]);
 
   return (
     <div className="min-h-screen bg-base-200 py-8">
