@@ -1068,7 +1068,8 @@ app.get("/api/contact-lists/:listId/contacts", authMiddleware, async (req: AuthR
           email: user?.email,
           phoneNumber: user?.phoneNumber,
           photoBase64: user?.photoBase64,
-          addedAt: contact.addedAt
+          addedAt: contact.addedAt,
+          lists: contact.lists.map(id => id.toString()) 
         };
       })
     );

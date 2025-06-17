@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { FiCheck } from 'react-icons/fi';
 
 export interface ContactFrontend {
   userId: string; 
@@ -40,6 +40,8 @@ export const ContactListItem = ({
   const handleDelete = () => {
     onDelete(contact.id, currentListId);
   };
+
+  console.log('Contact lists:', contact.lists);
 
   return (
     <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
@@ -89,7 +91,7 @@ export const ContactListItem = ({
                     className={contactLists.includes(list.id) ? 'active' : ''}
                     onClick={() => toggleList(list.id)}
                   >
-                    {contactLists.includes(list.id) && '✔ '}
+                    {contactLists.includes(list.id) && <FiCheck className="mr-1 w-4 h-4 text-primary" />}
                     {list.name}
                   </a>
                 </li>
