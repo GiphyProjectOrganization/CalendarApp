@@ -95,7 +95,7 @@ export function EditProfile() {
             const data = await res.json();
             if (res.ok) {
                 alert("Profile updated successfully!");
-                navigate('/profileCard')
+                navigate('/myProfileCard')
             } else {
                 alert(`Error: ${data.message}`);
             }
