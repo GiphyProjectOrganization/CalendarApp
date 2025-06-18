@@ -76,24 +76,24 @@ export function ProfileCard() {
                         )}
                     </div>
                     <h1 className="font-cubao mr-1">Welcome, {user.username}</h1>
-                    <span className="font-cubao mr-1 ">Profile Overview:</span>
+                    <span className="font-cubaoNarrow text-2xl mr-1 ">Profile Overview:</span>
                 </div>
                 <div className="space-y-2 w-full">
                     <div className="flex items-center gap-2">
-                        <span className="font-cubao mr-1">First Name:</span>
-                        <span className="font-cubao mr-1 break-all" style={userPropStyle}>{user.firstName}</span>
+                        <span className="font-cubaoNarrow text-2xl mr-1">First Name:</span>
+                        <span className="font-cubaoNarrow text-2xl mr-1 break-all" style={userPropStyle}>{user.firstName}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="font-cubao mr-1">Last Name:</span>
-                        <span className="font-cubao mr-1 break-all" style={userPropStyle}>{user.lastName}</span>
+                        <span className="font-cubaoNarrow text-2xl mr-1">Last Name:</span>
+                        <span className="font-cubaoNarrow text-2xl mr-1 break-all" style={userPropStyle}>{user.lastName}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="font-cubao mr-1">Email:</span>
-                        <span className="font-cubao mr-1 break-all" style={userPropStyle}>{user.email}</span>
+                        <span className="font-cubaoNarrow text-2xl mr-1">Email:</span>
+                        <span className="font-cubaoNarrow text-2xl mr-1 break-all" style={userPropStyle}>{user.email}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="font-cubao mr-1">Phone:</span>
-                        <span className="font-cubao mr-1 break-all" style={userPropStyle}>{user.phoneNumber}</span>
+                        <span className="font-cubaoNarrow text-2xl mr-1">Phone:</span>
+                        <span className="font-cubaoNarrow text-2xl mr-1 break-all" style={userPropStyle}>{user.phoneNumber}</span>
                     </div>
                 </div>
                 <div className="flex justify-end mt-6">

@@ -427,12 +427,12 @@ const EventPage = () => {
                 <button className="btn btn-error">Cancel Event</button>
               </>
             )}
-            {auth.userEmail && !event.participants.includes(auth.userEmail) && (
+            {/* {auth.userEmail && !event.participants.includes(auth.userEmail) && (
               <button className="btn btn-accent">Join Event</button>
-            )}
-            {auth.userEmail && event.participants.includes(auth.userEmail) && auth.userEmail !== event.creatorEmail && (
+            )} */}
+            {/* {auth.userEmail && event.participants.includes(auth.userEmail) && auth.userEmail !== event.creatorEmail && (
               <button className="btn btn-error">Leave Event</button>
-            )}
+            )} */}
           </div>
 
         </div>
